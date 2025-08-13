@@ -9,9 +9,11 @@ COPY pyproject.toml uv.lock ./
 # Install dependencies (including strands-agents)
 RUN uv sync --frozen --no-cache
 
-# Copy agent file
+# Copy agent files, tools, and prompts
 COPY agent.py ./
 COPY agent_config.py ./
+COPY tools/ ./tools/
+COPY prompts/ ./prompts/
 
 # Expose port
 EXPOSE 8080

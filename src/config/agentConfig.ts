@@ -35,31 +35,16 @@ export const MODEL_OPTIONS: ModelOption[] = [
 
 export const PERSONALITY_OPTIONS: PersonalityOption[] = [
   {
-    id: 'basic',
-    name: 'Helpful Assistant',
-    description: 'Balanced and professional'
+    id: 'game_recap',
+    name: 'Game Recap Expert',
+    description: 'Specializes in creating detailed game recaps and summaries'
   },
   {
-    id: 'creative',
-    name: 'Creative Thinker',
-    description: 'Imaginative and innovative'
-  },
-  {
-    id: 'analytical',
-    name: 'Analytical Expert',
-    description: 'Logical and detailed responses'
-  },
-  {
-    id: 'friendly',
-    name: 'Friendly Companion',
-    description: 'Warm and conversational'
-  },
-  {
-    id: 'silly',
-    name: 'Silly Trickster',
-    description: 'Tells jokes and gives silly responses'
+    id: 'nfl_stats',
+    name: 'NFL Stats Analyst',
+    description: 'Deep statistical knowledge with access to NFL knowledge base'
   }
 ];
 
 export const DEFAULT_MODEL = 'us.amazon.nova-micro-v1:0';
-export const DEFAULT_PERSONALITY = 'basic';
+export const DEFAULT_PERSONALITY = 'game_recap';

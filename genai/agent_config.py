@@ -4,13 +4,65 @@ This module provides a centralized way to configure and create agents
 to avoid code duplication between CLI and other components.
 """
 
+import os
 from strands import Agent
 from strands.models import BedrockModel
 from strands.agent.conversation_manager import SlidingWindowConversationManager
 from strands_tools import shell, editor, python_repl, calculator
+from tools import get_game_list, get_game_inputs, get_game_outputs, nfl_kb_search
 
-def create_strands_agent(model = 'us.amazon.nova-micro-v1:0',
-                         personality = 'basic'):
+def load_prompt_from_file(filename: str) -> str:
+    """
+    Load a prompt from a file in the prompts directory.
+    
+    Args:
+        filename: Name of the file (without .md extension)
+        
+    Returns:
+        str: Content of the prompt file
+    """
+    try:
+        prompts_dir = os.path.join(os.path.dirname(__file__), 'prompts')
+        file_path = os.path.join(prompts_dir, f"{filename}.md")
+        
+        with open(file_path, 'r', encoding='utf-8') as f:
+            return f.read().strip()
+    except FileNotFoundError:
+        return f"Prompt file '{filename}.md' not found"
+    except Exception as e:
+        return f"Error loading prompt file '{filename}.md': {str(e)}"
+
+def get_system_prompt(personality: str, model: str = 'us.amazon.nova-micro-v1:0') -> str:
+    """
+    Get the system prompt for a given personality, including rules.
+    
+    Args:
+        personality: Either 'game_recap', 'nfl_stats', or custom prompt
+        model: The model ID being used
+        
+    Returns:
+        str: Complete system prompt with rules appended
+    """
+    # Load rules that apply to all prompts
+    rules = load_prompt_from_file('rules')
+    
+    # Handle specific personalities
+    if personality == 'game_recap':
+        base_prompt = load_prompt_from_file('game_recap')
+    elif personality == 'nfl_stats':
+        base_prompt = load_prompt_from_file('nfl_stats')
+    else:
+        # Treat as custom system prompt
+        base_prompt = personality
+    
+    # Replace model placeholder with actual model name
+    base_prompt = base_prompt.replace('[current model name]', model)
+    
+    # Combine base prompt with rules
+    return f"{base_prompt}\n\n{rules}"
+
+def create_strands_agent(model = 'us.amazon.nova-premier-v1:0',
+                         personality = 'game_recap'):
     """
     Create and return a configured Strands agent instance.
     
@@ -22,7 +74,7 @@ def create_strands_agent(model = 'us.amazon.nova-micro-v1:0',
     
     Args:
         model (str): The Bedrock model ID to use
-        personality (str): Either 'basic' for default prompt or custom system prompt
+        personality (str): Either 'game_recap', 'nfl_stats', or custom system prompt
         
     Returns:
         Agent: Configured agent ready for use
@@ -31,7 +83,7 @@ def create_strands_agent(model = 'us.amazon.nova-micro-v1:0',
     # Configure the Bedrock model
     bedrock_model = BedrockModel(
         model_id=model,
-        max_tokens=2000,
+        max_tokens=10000,
         temperature=0.3,
         top_p=0.8,
     )
@@ -41,24 +93,29 @@ def create_strands_agent(model = 'us.amazon.nova-micro-v1:0',
         window_size=10,  # Limit history size
     )
 
-    # Set personality based on input with predefined options
-    predefined_personalities = {
-        'basic': "You are a helpful assistant.",
-        'creative': "You are a creative and imaginative assistant who thinks outside the box.",
-        'analytical': "You are a logical and analytical assistant who provides detailed, structured responses.",
-        'friendly': "You are a warm, friendly, and conversational assistant who uses a casual tone.",
-        'silly': "You are a trickster, you always tell jokes in all your answers and give very silly responses."
-    }
+    # Get the system prompt based on personality
+    system_prompt = get_system_prompt(personality, model)
     
     print(f"Received personality parameter: '{personality}'")
+    print(f"Using system prompt: {system_prompt}")
+
+    # Configure tools based on personality
+    # Core tools (always available)
+    base_tools = [get_game_list, get_game_inputs, get_game_outputs]
     
-    if personality in predefined_personalities:
-        system_prompt = predefined_personalities[personality]
-        print(f"Using predefined personality: {system_prompt}")
+    # Specialized tools for micro models (commented out for advanced model testing)
+    # Uncomment these imports and add to base_tools for Nova Micro or structured guidance:
+    # from tools.get_recent_games import get_recent_games
+    # from tools.get_head_to_head import get_head_to_head
+    # base_tools.extend([get_recent_games, get_head_to_head])
+    
+    # Add NFL knowledge base search tool only for nfl_stats profile
+    if personality == 'nfl_stats':
+        tools = base_tools + [nfl_kb_search]
+        print("Added NFL knowledge base search tool for nfl_stats profile")
     else:
-        # Treat as custom system prompt
-        system_prompt = personality
-        print(f"Using custom personality: {system_prompt}")
+        tools = base_tools
+        print("Using base tools only (no knowledge base search) - testing advanced model reasoning")
 
     # Create and return the agent
     strands_agent = Agent(
@@ -66,9 +123,7 @@ def create_strands_agent(model = 'us.amazon.nova-micro-v1:0',
         system_prompt=system_prompt,
         conversation_manager=conversation_manager,
         # Adding tools is what triggers "Thinking..." in the UI
-        #tools=[calculator]
+        tools=tools
     )
     
     return strands_agent
-
-
