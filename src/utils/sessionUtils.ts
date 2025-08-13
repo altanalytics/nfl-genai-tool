@@ -12,7 +12,7 @@ export const generateSessionId = (userName: string): string => {
     randomSuffix += chars.charAt(Math.floor(Math.random() * chars.length));
   }
   
-  const sessionId = prefix + randomSuffix;
+  let sessionId = prefix + randomSuffix;
   
   // Ensure exactly 33 characters
   if (sessionId.length !== 33) {
