@@ -26,11 +26,11 @@ export const MODEL_OPTIONS: ModelOption[] = [
     name: 'Amazon Nova Premier',
     description: 'Most capable Nova model'
   },
-  {
-    id: 'us.anthropic.claude-sonnet-4-20250514-v1:0',
-    name: 'Claude Sonnet 4',
-    description: 'Advanced reasoning and analysis'
-  }
+  // {
+  //   id: 'us.anthropic.claude-sonnet-4-20250514-v1:0',
+  //   name: 'Claude Sonnet 4',
+  //   description: 'Advanced reasoning and analysis'
+  // }
 ];
 
 export const PERSONALITY_OPTIONS: PersonalityOption[] = [
