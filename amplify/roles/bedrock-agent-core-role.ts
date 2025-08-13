@@ -57,6 +57,32 @@ export function createBedrockAgentCoreRole(scope: Construct): Role {
     resources: ['arn:aws:logs:*:*:*']
   }));
 
+  // Add S3 permissions for NFL data access
+  role.addToPolicy(new PolicyStatement({
+    effect: Effect.ALLOW,
+    actions: [
+      's3:GetObject',
+      's3:ListBucket'
+    ],
+    resources: [
+      'arn:aws:s3:::alt-nfl-bucket',
+      'arn:aws:s3:::alt-nfl-bucket/*'
+    ]
+  }));
+
+  // Add Bedrock Knowledge Base permissions
+  role.addToPolicy(new PolicyStatement({
+    effect: Effect.ALLOW,
+    actions: [
+      'bedrock:Retrieve',
+      'bedrock:RetrieveAndGenerate',
+      'bedrock:GetKnowledgeBase',
+      'bedrock:ListKnowledgeBases',
+      'bedrock:QueryKnowledgeBase'
+    ],
+    resources: ['*']
+  }));
+
   // Add IAM permissions to pass roles if needed
   role.addToPolicy(new PolicyStatement({
     effect: Effect.ALLOW,
