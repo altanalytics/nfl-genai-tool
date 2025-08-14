@@ -42,14 +42,14 @@ const MessageInput: React.FC<MessageInputProps> = ({
           display: 'flex',
           gap: 1.5,
           alignItems: 'flex-end',
-          background: '#f8fafc',
-          border: '2px solid #e2e8f0',
+          background: '#013369', // Solid NFL blue
+          border: '2px solid #1a4480',
           borderRadius: 3,
           p: 1,
           transition: 'all 0.2s ease',
           '&:focus-within': {
-            borderColor: 'primary.main',
-            boxShadow: '0 0 0 3px rgba(5, 150, 105, 0.1)',
+            borderColor: '#2563eb',
+            boxShadow: '0 0 0 3px rgba(37, 99, 235, 0.1)',
           },
         }}
       >
@@ -67,12 +67,12 @@ const MessageInput: React.FC<MessageInputProps> = ({
             sx: {
               fontSize: 15,
               lineHeight: 1.4,
-              color: '#1e293b',
+              color: 'white', // White text on blue background
               '& .MuiInputBase-input': {
                 padding: '8px 12px',
               },
               '& .MuiInputBase-input::placeholder': {
-                color: '#64748b',
+                color: 'rgba(255, 255, 255, 0.7)', // Light white placeholder
                 opacity: 1,
               },
             },

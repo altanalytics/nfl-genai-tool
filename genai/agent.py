@@ -17,12 +17,12 @@ async def agent_invocation(payload):
     # Split session ID on hyphen to get username and session
     if '-' in session_id:
         username, actual_session_id = session_id.split('-', 1)  # Split only on first hyphen
-        s3_prefix = f"{username}/"
+        s3_prefix = username  # Just the username, no trailing slash
         print(f'Split session - Username: {username}, Session ID: {actual_session_id}, S3 Prefix: {s3_prefix}')
     else:
         # Fallback if no hyphen found
         actual_session_id = session_id
-        s3_prefix = "default/"
+        s3_prefix = "default"  # No trailing slash
         print(f'No hyphen in session ID, using default prefix: {s3_prefix}')
     
     # Create agent with S3 session management

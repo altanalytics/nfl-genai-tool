@@ -36,20 +36,25 @@ const ChatContainer: React.FC<ChatContainerProps> = ({ userName }) => {
     console.log('Current Session ID:', sessionId);
   }, [sessionId]);
 
-  // Initialize with "hello" when component mounts or personality changes
+  // Initialize with "hello" when component mounts, personality changes, model changes, or new chat is started
   useEffect(() => {
     if (!isInitialized) {
       initializeChat();
     }
-  }, [selectedPersonality]); // Re-run when personality changes
+  }, [selectedPersonality, selectedModel, isInitialized]); // Re-run when personality, model, or initialization state changes
 
   const initializeChat = async () => {
-    console.log('Initializing chat with personality:', selectedPersonality);
+    console.log('=== INITIALIZING CHAT ===');
+    console.log('Previous session ID:', sessionId);
+    console.log('Initializing chat with:');
+    console.log('  - Model:', selectedModel);
+    console.log('  - Personality:', selectedPersonality);
     
     // Generate a new session ID for each initialization
     const newSessionId = generateSessionId(userName);
     setSessionId(newSessionId);
-    console.log('New session ID for initialization:', newSessionId);
+    console.log('Generated NEW session ID:', newSessionId);
+    console.log('=== CHAT INITIALIZED ===');
     
     setIsInitialized(true);
     
@@ -58,6 +63,8 @@ const ChatContainer: React.FC<ChatContainerProps> = ({ userName }) => {
   };
 
   const handleNewChat = () => {
+    console.log('=== NEW CHAT CLICKED ===');
+    console.log('Current session ID before new chat:', sessionId);
     setMessages([]);
     setStreamingResponse('');
     setIsLoading(false);
@@ -68,22 +75,36 @@ const ChatContainer: React.FC<ChatContainerProps> = ({ userName }) => {
 
   const handlePersonalityChange = (newPersonality: string) => {
     if (newPersonality !== selectedPersonality) {
+      console.log('=== PERSONALITY CHANGED ===');
       console.log('Personality changed from', selectedPersonality, 'to', newPersonality);
+      console.log('Current session ID before personality change:', sessionId);
       setSelectedPersonality(newPersonality);
       
-      // Clear chat and re-initialize with new personality
+      // Clear chat and re-initialize with new personality and new session ID
       setMessages([]);
       setStreamingResponse('');
       setIsLoading(false);
       setPrompt('');
-      setIsInitialized(false); // This will trigger re-initialization with new personality
+      setIsInitialized(false); // This will trigger re-initialization with new session ID
+      console.log('Personality change will generate new session ID');
     }
   };
 
   const handleModelChange = (newModel: string) => {
-    console.log('Model changed from', selectedModel, 'to', newModel);
-    setSelectedModel(newModel);
-    // Note: Model change does NOT clear the chat or re-initialize
+    if (newModel !== selectedModel) {
+      console.log('=== MODEL CHANGED ===');
+      console.log('Model changed from', selectedModel, 'to', newModel);
+      console.log('Current session ID before model change:', sessionId);
+      setSelectedModel(newModel);
+      
+      // Clear chat and re-initialize with new model and new session ID
+      setMessages([]);
+      setStreamingResponse('');
+      setIsLoading(false);
+      setPrompt('');
+      setIsInitialized(false); // This will trigger re-initialization with new session ID
+      console.log('Model change will generate new session ID');
+    }
   };
 
   const parseSSEChunk = (chunk: string): string => {
@@ -177,9 +198,18 @@ const ChatContainer: React.FC<ChatContainerProps> = ({ userName }) => {
         setStreamingResponse('');
       }
     } catch (error) {
+      console.error('Error during streaming:', error);
+      
+      let errorText = `**Error:** ${error instanceof Error ? error.message : 'Failed to get response from AI'}`;
+      
+      // Handle rate limiting with user-friendly message
+      if (error instanceof Error && (error.message.includes('429') || error.message.includes('Rate Exceeded'))) {
+        errorText = '⚠️ **Rate limit exceeded.** Please wait a moment before sending another message. AWS Bedrock has temporary usage limits to ensure fair access.';
+      }
+      
       const errorMessage: Message = {
         id: (Date.now() + 1).toString(),
-        text: `**Error:** ${error instanceof Error ? error.message : 'Failed to get response from AI'}`,
+        text: errorText,
         isUser: false,
         timestamp: new Date()
       };

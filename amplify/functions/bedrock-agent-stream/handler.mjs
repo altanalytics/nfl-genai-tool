@@ -19,6 +19,18 @@ export const handler = awslambda.streamifyResponse(async (event, responseStream,
   const qualifier  = process.env.AGENTCORE_QUALIFIER || "DEFAULT";
   const s3SessionBucket = process.env.AGENT_SESSION_S3 || "";
 
+  // Log environment variables for debugging
+  console.log('Environment variables:', {
+    AWS_REGION: process.env.AWS_REGION,
+    AGENTCORE_RUNTIME_ARN: process.env.AGENTCORE_RUNTIME_ARN,
+    AGENTCORE_QUALIFIER: process.env.AGENTCORE_QUALIFIER,
+    AGENT_SESSION_S3: process.env.AGENT_SESSION_S3,
+    region,
+    runtimeArn,
+    qualifier,
+    s3SessionBucket
+  });
+
   let body = {};
   try { body = JSON.parse(event.body || "{}"); } catch {}
   const prompt      = body.prompt ?? "Hello";

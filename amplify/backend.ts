@@ -76,6 +76,8 @@ signupFn.addEnvironment('SNS_TOPIC_ARN', signupNotificationTopic.topicArn);
 const bedrockAgentStreamFn = backend.bedrockAgentStream.resources
   .lambda as unknown as LambdaFunction;
 bedrockAgentStreamFn.addEnvironment('AGENT_SESSION_S3', process.env.AGENT_SESSION_S3 || '');
+bedrockAgentStreamFn.addEnvironment('AGENTCORE_RUNTIME_ARN', process.env.AGENTCORE_RUNTIME_ARN || '');
+bedrockAgentStreamFn.addEnvironment('AGENTCORE_QUALIFIER', process.env.AGENTCORE_QUALIFIER || 'DEFAULT');
 
 /* ---------------------- Bedrock AgentCore integration ---------------------- */
 
