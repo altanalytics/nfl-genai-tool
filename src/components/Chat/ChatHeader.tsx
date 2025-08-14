@@ -38,7 +38,7 @@ const ChatHeader: React.FC<ChatHeaderProps> = ({
 
   return (
     <Box sx={{ 
-      background: 'linear-gradient(135deg, #581c87 0%, #7c3aed 100%)',
+      background: 'linear-gradient(135deg, #013369 0%, #D50A0A 100%)',
       color: 'white',
       borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
     }}>
@@ -52,10 +52,10 @@ const ChatHeader: React.FC<ChatHeaderProps> = ({
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
           <Box sx={{ position: 'relative' }}>
             <Avatar sx={{ 
-              background: 'linear-gradient(135deg, #8b5cf6 0%, #a855f7 100%)',
+              background: 'linear-gradient(135deg, #D50A0A 0%, #013369 100%)',
               width: 48, 
               height: 48,
-              boxShadow: '0 4px 12px rgba(139, 92, 246, 0.4)',
+              boxShadow: '0 4px 12px rgba(213, 10, 10, 0.4)',
             }}>
               <Settings sx={{ fontSize: 24 }} />
             </Avatar>
@@ -84,7 +84,7 @@ const ChatHeader: React.FC<ChatHeaderProps> = ({
                 lineHeight: 1.2,
                 color: '#f8fafc'
               }}>
-                Agent Configuration
+                NFL GenAI Tool
               </Typography>
               <Box sx={{ display: 'flex', gap: 1, mt: 0.5 }}>
                 <Chip
@@ -195,17 +195,17 @@ const ChatHeader: React.FC<ChatHeaderProps> = ({
                 MenuProps={{
                   PaperProps: {
                     sx: {
-                      bgcolor: '#1e293b',
-                      border: '1px solid rgba(139, 92, 246, 0.3)',
+                      bgcolor: '#1a4480',
+                      border: '1px solid rgba(213, 10, 10, 0.3)',
                       '& .MuiMenuItem-root': {
                         color: 'white',
                         '&:hover': {
-                          backgroundColor: 'rgba(139, 92, 246, 0.2)',
+                          backgroundColor: 'rgba(213, 10, 10, 0.2)',
                         },
                         '&.Mui-selected': {
-                          backgroundColor: 'rgba(139, 92, 246, 0.3)',
+                          backgroundColor: 'rgba(213, 10, 10, 0.3)',
                           '&:hover': {
-                            backgroundColor: 'rgba(139, 92, 246, 0.4)',
+                            backgroundColor: 'rgba(213, 10, 10, 0.4)',
                           }
                         }
                       }
@@ -266,17 +266,17 @@ const ChatHeader: React.FC<ChatHeaderProps> = ({
                 MenuProps={{
                   PaperProps: {
                     sx: {
-                      bgcolor: '#1e293b',
-                      border: '1px solid rgba(139, 92, 246, 0.3)',
+                      bgcolor: '#1a4480',
+                      border: '1px solid rgba(213, 10, 10, 0.3)',
                       '& .MuiMenuItem-root': {
                         color: 'white',
                         '&:hover': {
-                          backgroundColor: 'rgba(139, 92, 246, 0.2)',
+                          backgroundColor: 'rgba(213, 10, 10, 0.2)',
                         },
                         '&.Mui-selected': {
-                          backgroundColor: 'rgba(139, 92, 246, 0.3)',
+                          backgroundColor: 'rgba(213, 10, 10, 0.3)',
                           '&:hover': {
-                            backgroundColor: 'rgba(139, 92, 246, 0.4)',
+                            backgroundColor: 'rgba(213, 10, 10, 0.4)',
                           }
                         }
                       }

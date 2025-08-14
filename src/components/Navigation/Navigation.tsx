@@ -26,7 +26,7 @@ const Navigation: React.FC<NavigationProps> = ({ userName, signOut }) => {
     <AppBar 
       position="fixed" 
       sx={{ 
-        background: 'linear-gradient(135deg, #374151 0%, #4b5563 100%)',
+        background: 'linear-gradient(135deg, #013369 0%, #D50A0A 100%)',
         backdropFilter: 'blur(10px)',
         borderBottom: '1px solid rgba(255, 255, 255, 0.2)',
         boxShadow: '0 4px 20px rgba(0, 0, 0, 0.3)',
@@ -36,12 +36,20 @@ const Navigation: React.FC<NavigationProps> = ({ userName, signOut }) => {
         {/* Logo and Title */}
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
           <Avatar sx={{ 
-            background: 'linear-gradient(135deg, #ff9500 0%, #ff6b00 100%)',
+            background: 'transparent',
             width: 36, 
             height: 36,
-            boxShadow: '0 4px 12px rgba(255, 149, 0, 0.3)',
+            boxShadow: '0 4px 12px rgba(255, 255, 255, 0.2)',
           }}>
-            <Psychology sx={{ fontSize: 20 }} />
+            <img 
+              src="/footballlogo.png" 
+              alt="NFL Logo" 
+              style={{ 
+                width: '100%', 
+                height: '100%', 
+                objectFit: 'contain' 
+              }} 
+            />
           </Avatar>
           <Box>
             <Typography variant="h6" component="div" sx={{ 
@@ -50,14 +58,14 @@ const Navigation: React.FC<NavigationProps> = ({ userName, signOut }) => {
               lineHeight: 1.2,
               color: '#f8fafc'
             }}>
-              GenAI Assistant
+              NFL GenAI Tool
             </Typography>
             <Typography variant="caption" sx={{ 
               color: '#94a3b8',
               fontSize: '0.75rem',
               fontWeight: 500
             }}>
-              powered by strands-agents and Amazon Bedrock AgentCore
+              powered by Amazon Bedrock and strands-agents
             </Typography>
           </Box>
         </Box>
@@ -127,12 +135,12 @@ const Navigation: React.FC<NavigationProps> = ({ userName, signOut }) => {
             onClick={signOut}
             sx={{ 
               ml: 1,
-              background: 'linear-gradient(135deg, #dc2626 0%, #b91c1c 100%)',
+              background: 'linear-gradient(135deg, #D50A0A 0%, #b91c1c 100%)',
               fontWeight: 600,
               '&:hover': {
                 background: 'linear-gradient(135deg, #b91c1c 0%, #991b1b 100%)',
                 transform: 'translateY(-1px)',
-                boxShadow: '0 4px 12px rgba(220, 38, 38, 0.4)',
+                boxShadow: '0 4px 12px rgba(213, 10, 10, 0.4)',
               },
               transition: 'all 0.2s ease',
             }}

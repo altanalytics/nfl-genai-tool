@@ -107,6 +107,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({ message, isStreaming }) =
                 py: 0.25,
                 borderRadius: 0.5,
                 border: '1px solid #e5e7eb',
+                fontSize: '0.9em',
               }}
             >
               {children}
@@ -196,8 +197,8 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({ message, isStreaming }) =
         width: 36, 
         height: 36,
         background: message.isUser 
-          ? 'linear-gradient(135deg, #059669 0%, #047857 100%)'
-          : 'linear-gradient(135deg, #1e293b 0%, #334155 100%)',
+          ? 'linear-gradient(135deg, #013369 0%, #D50A0A 100%)'
+          : 'linear-gradient(135deg, #D50A0A 0%, #013369 100%)',
         flexShrink: 0
       }}>
         {message.isUser ? <Person /> : '🤖'}
@@ -216,18 +217,19 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({ message, isStreaming }) =
           borderBottomRightRadius: message.isUser ? 0.75 : 2.25,
           borderBottomLeftRadius: message.isUser ? 2.25 : 0.75,
           background: message.isUser 
-            ? 'linear-gradient(135deg, #059669 0%, #047857 100%)'
+            ? 'linear-gradient(135deg, #013369 0%, #D50A0A 100%)'
             : '#f8fafc',
           color: message.isUser ? 'white' : '#1e293b',
           border: message.isUser ? 'none' : '1px solid #e2e8f0',
           wordWrap: 'break-word',
           lineHeight: 1.4,
+          fontSize: '14px', // Smaller text size
           ...(isStreaming && {
-            borderBottom: '2px solid #059669',
+            borderBottom: '2px solid #013369',
           }),
         }}>
           {message.isUser ? (
-            <Typography sx={{ fontSize: 15, whiteSpace: 'pre-wrap' }}>
+            <Typography sx={{ fontSize: 14, whiteSpace: 'pre-wrap' }}>
               {message.text}
             </Typography>
           ) : (

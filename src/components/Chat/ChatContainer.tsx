@@ -197,8 +197,8 @@ const ChatContainer: React.FC<ChatContainerProps> = ({ userName }) => {
         elevation={3}
         sx={{ 
           width: '100%',
-          maxWidth: 900, // Increased width to accommodate settings
-          height: '90vh',
+          maxWidth: 1100, // Increased width for bigger chat box
+          height: '95vh', // Increased height for bigger chat box
           display: 'flex',
           flexDirection: 'column',
           borderRadius: 3,

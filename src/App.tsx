@@ -5,19 +5,19 @@ import '@aws-amplify/ui-react/styles.css';
 import AuthenticatedApp from './components/Auth/AuthenticatedApp';
 import './App.css';
 
-// Create dark theme
+// Create NFL-themed dark theme
 const theme = createTheme({
   palette: {
     mode: 'dark',
     primary: {
-      main: '#059669',
+      main: '#013369', // NFL Blue
     },
     secondary: {
-      main: '#1e293b',
+      main: '#D50A0A', // NFL Red
     },
     background: {
-      default: '#0f172a',
-      paper: '#1e293b',
+      default: '#013369',
+      paper: '#1a4480',
     },
   },
   typography: {
@@ -27,7 +27,7 @@ const theme = createTheme({
     MuiCssBaseline: {
       styleOverrides: {
         body: {
-          background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%)',
+          background: 'linear-gradient(135deg, #013369 0%, #1a4480 50%, #D50A0A 100%)',
           minHeight: '100vh',
         },
       },
