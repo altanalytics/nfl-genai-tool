@@ -37,7 +37,6 @@ if (agentSessionBucketName) {
     encryption: BucketEncryption.S3_MANAGED,
     versioned: false,
     publicReadAccess: false,
-    publicWriteAccess: false,
     // This tells CDK to import existing bucket if it exists
     removalPolicy: RemovalPolicy.RETAIN,
   });
