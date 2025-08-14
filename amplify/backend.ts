@@ -4,8 +4,9 @@ import { auth } from './auth/resource';
 import { bedrockAgentStream } from './functions/bedrock-agent-stream/resource';
 import { userSignupNotification } from './functions/user-signup-notification/resource';
 
-import { Duration } from 'aws-cdk-lib';
+import { Duration, RemovalPolicy } from 'aws-cdk-lib';
 import { Effect, PolicyStatement } from 'aws-cdk-lib/aws-iam';
+import { Bucket, BucketEncryption } from 'aws-cdk-lib/aws-s3';
 import {
   FunctionUrlAuthType,
   HttpMethod,
@@ -24,6 +25,26 @@ const backend = defineBackend({
 
 // Create the Bedrock Agent Core role
 const bedrockAgentCoreRole = createBedrockAgentCoreRole(backend.createStack('BedrockAgentCoreStack'));
+
+// Create S3 bucket for agent sessions if environment variable is provided
+let agentSessionBucket;
+const agentSessionBucketName = process.env.AGENT_SESSION_S3;
+if (agentSessionBucketName) {
+  // CDK will handle the case where bucket already exists
+  // If bucket exists with same name, CDK will import it instead of creating
+  agentSessionBucket = new Bucket(backend.createStack('AgentSessionStack'), 'AgentSessionBucket', {
+    bucketName: agentSessionBucketName,
+    encryption: BucketEncryption.S3_MANAGED,
+    versioned: false,
+    publicReadAccess: false,
+    publicWriteAccess: false,
+    // This tells CDK to import existing bucket if it exists
+    removalPolicy: RemovalPolicy.RETAIN,
+  });
+  console.log(`Configured S3 bucket for agent sessions: ${agentSessionBucketName}`);
+} else {
+  console.log('AGENT_SESSION_S3 environment variable not set, skipping bucket configuration');
+}
 
 /* ------------------------- SNS: signup notifications ------------------------ */
 

@@ -38,7 +38,7 @@ const ChatHeader: React.FC<ChatHeaderProps> = ({
 
   return (
     <Box sx={{ 
-      background: 'linear-gradient(135deg, #013369 0%, #D50A0A 100%)',
+      background: '#D50A0A', // Solid NFL red
       color: 'white',
       borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
     }}>

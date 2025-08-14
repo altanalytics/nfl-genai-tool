@@ -1,3 +1,4 @@
+import os
 from bedrock_agentcore import BedrockAgentCoreApp
 from agent_config import create_strands_agent
 
@@ -8,8 +9,31 @@ async def agent_invocation(payload):
     user_message = payload.get("prompt", "No prompt found in input...")
     model_selected = payload.get("model", "us.amazon.nova-micro-v1:0")
     model_persona = payload.get("personality", "basic")
-    print(f'Model parameters {model_selected}, {model_persona}')
-    agent = create_strands_agent(model=model_selected, personality=model_persona)
+    session_id = payload.get("session_id", "default-session")
+    s3_session_bucket = payload.get("s3sessionbucket", "")
+    
+    print(f'Request - Model: {model_selected}, Personality: {model_persona}, Session: {session_id}, S3 Bucket: {s3_session_bucket}')
+    
+    # Split session ID on hyphen to get username and session
+    if '-' in session_id:
+        username, actual_session_id = session_id.split('-', 1)  # Split only on first hyphen
+        s3_prefix = f"{username}/"
+        print(f'Split session - Username: {username}, Session ID: {actual_session_id}, S3 Prefix: {s3_prefix}')
+    else:
+        # Fallback if no hyphen found
+        actual_session_id = session_id
+        s3_prefix = "default/"
+        print(f'No hyphen in session ID, using default prefix: {s3_prefix}')
+    
+    # Create agent with S3 session management
+    agent = create_strands_agent(
+        model=model_selected, 
+        personality=model_persona,
+        session_id=actual_session_id,
+        s3_bucket=s3_session_bucket,
+        s3_prefix=s3_prefix
+    )
+    
     # tell UI to reset
     yield {"type": "start"}
 

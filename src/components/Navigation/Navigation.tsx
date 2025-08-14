@@ -26,7 +26,7 @@ const Navigation: React.FC<NavigationProps> = ({ userName, signOut }) => {
     <AppBar 
       position="fixed" 
       sx={{ 
-        background: 'linear-gradient(135deg, #013369 0%, #D50A0A 100%)',
+        background: '#013369', // Solid NFL blue
         backdropFilter: 'blur(10px)',
         borderBottom: '1px solid rgba(255, 255, 255, 0.2)',
         boxShadow: '0 4px 20px rgba(0, 0, 0, 0.3)',

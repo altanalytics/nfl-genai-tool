@@ -17,6 +17,7 @@ export const handler = awslambda.streamifyResponse(async (event, responseStream,
   const region = process.env.AWS_REGION || "us-east-1";
   const runtimeArn = process.env.AGENTCORE_RUNTIME_ARN || "placeholder";
   const qualifier  = process.env.AGENTCORE_QUALIFIER || "DEFAULT";
+  const s3SessionBucket = process.env.AGENT_SESSION_S3 || "";
 
   let body = {};
   try { body = JSON.parse(event.body || "{}"); } catch {}
@@ -25,15 +26,17 @@ export const handler = awslambda.streamifyResponse(async (event, responseStream,
   const model       = body.model ?? "us.amazon.nova-micro-v1:0";
   const personality = body.personality ?? "basic";
 
-  console.log('Request parameters:', { prompt, sessionId, model, personality });
+  console.log('Request parameters:', { prompt, sessionId, model, personality, s3SessionBucket });
 
   const client = new BedrockAgentCoreClient({ region });
 
-  // Pass all parameters to the agent
+  // Pass all parameters including S3 session bucket to the agent
   const payload = JSON.stringify({ 
     prompt, 
+    session_id: sessionId,
     model, 
-    personality 
+    personality,
+    s3sessionbucket: s3SessionBucket
   });
 
   const cmd = new InvokeAgentRuntimeCommand({

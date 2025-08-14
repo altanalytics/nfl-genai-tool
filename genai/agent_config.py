@@ -5,9 +5,11 @@ to avoid code duplication between CLI and other components.
 """
 
 import os
+import boto3
 from strands import Agent
 from strands.models import BedrockModel
 from strands.agent.conversation_manager import SlidingWindowConversationManager
+from strands.session.s3_session_manager import S3SessionManager
 from strands_tools import shell, editor, python_repl, calculator
 from tools import get_game_list, get_game_inputs, get_game_outputs, nfl_kb_search
 
@@ -62,7 +64,10 @@ def get_system_prompt(personality: str, model: str = 'us.amazon.nova-micro-v1:0'
     return f"{base_prompt}\n\n{rules}"
 
 def create_strands_agent(model = 'us.amazon.nova-premier-v1:0',
-                         personality = 'game_recap'):
+                         personality = 'game_recap',
+                         session_id = None,
+                         s3_bucket = None,
+                         s3_prefix = None):
     """
     Create and return a configured Strands agent instance.
     
@@ -117,11 +122,30 @@ def create_strands_agent(model = 'us.amazon.nova-premier-v1:0',
         tools = base_tools
         print("Using base tools only (no knowledge base search) - testing advanced model reasoning")
 
+    # Create session manager based on whether S3 parameters are provided
+    session_manager = None
+    if session_id and s3_bucket and s3_prefix:
+        print(f"Creating S3SessionManager - Session: {session_id}, Bucket: {s3_bucket}, Prefix: {s3_prefix}")
+        
+        # Create boto3 session for better credential handling
+        boto_session = boto3.Session(region_name="us-east-1")
+        
+        session_manager = S3SessionManager(
+            session_id=session_id,
+            bucket=s3_bucket,
+            prefix=s3_prefix,
+            boto_session=boto_session,
+            region_name="us-east-1"
+        )
+    else:
+        print("Using default SlidingWindowConversationManager (no S3 session persistence)")
+
     # Create and return the agent
     strands_agent = Agent(
         model=bedrock_model,
         system_prompt=system_prompt,
         conversation_manager=conversation_manager,
+        session_manager=session_manager,  # Add session manager
         # Adding tools is what triggers "Thinking..." in the UI
         tools=tools
     )

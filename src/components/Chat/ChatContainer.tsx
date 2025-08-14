@@ -128,12 +128,16 @@ const ChatContainer: React.FC<ChatContainerProps> = ({ userName }) => {
     setStreamingResponse('');
     
     try {
-      const response = await makeAuthenticatedRequest({
+      const requestPayload = {
         prompt: message,
         session_id: sessionId,
         model: selectedModel,
         personality: selectedPersonality
-      });
+      };
+      
+      console.log('Sending request with payload:', requestPayload);
+      
+      const response = await makeAuthenticatedRequest(requestPayload);
 
       if (!response.ok) {
         const errorText = await response.text();

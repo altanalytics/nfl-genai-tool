@@ -57,6 +57,22 @@ export function createBedrockAgentCoreRole(scope: Construct): Role {
     resources: ['arn:aws:logs:*:*:*']
   }));
 
+  // Add S3 permissions for session storage
+  const sessionBucketName = process.env.AGENT_SESSION_S3 || 'agent-sessions-bucket-fallback';
+  role.addToPolicy(new PolicyStatement({
+    effect: Effect.ALLOW,
+    actions: [
+      's3:GetObject',
+      's3:PutObject',
+      's3:DeleteObject',
+      's3:ListBucket'
+    ],
+    resources: [
+      `arn:aws:s3:::${sessionBucketName}`,
+      `arn:aws:s3:::${sessionBucketName}/*`
+    ]
+  }));
+
   // Add S3 permissions for NFL data access
   role.addToPolicy(new PolicyStatement({
     effect: Effect.ALLOW,
