@@ -72,6 +72,11 @@ const signupFn = backend.userSignupNotification.resources
   .lambda as unknown as LambdaFunction;
 signupFn.addEnvironment('SNS_TOPIC_ARN', signupNotificationTopic.topicArn);
 
+// Pass the S3 session bucket to the bedrock agent stream lambda
+const bedrockAgentStreamFn = backend.bedrockAgentStream.resources
+  .lambda as unknown as LambdaFunction;
+bedrockAgentStreamFn.addEnvironment('AGENT_SESSION_S3', process.env.AGENT_SESSION_S3 || '');
+
 /* ---------------------- Bedrock AgentCore integration ---------------------- */
 
 // Agent runtime ARN (set later; safe to be missing for first deploy)

@@ -9,7 +9,8 @@ interface AuthenticatedAppProps {
 }
 
 const AuthenticatedApp: React.FC<AuthenticatedAppProps> = ({ signOut }) => {
-  const [userName, setUserName] = useState<string>('User');
+  const [userName, setUserName] = useState<string>('');
+  const [isUserLoaded, setIsUserLoaded] = useState<boolean>(false);
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -17,13 +18,33 @@ const AuthenticatedApp: React.FC<AuthenticatedAppProps> = ({ signOut }) => {
         const attributes = await fetchUserAttributes();
         const name = attributes.name || attributes.email || 'User';
         setUserName(name);
+        setIsUserLoaded(true);
       } catch (error) {
         console.error('Error fetching user attributes:', error);
         setUserName('User');
+        setIsUserLoaded(true);
       }
     };
     fetchUserData();
   }, []);
+
+  // Don't render ChatContainer until we have the username
+  if (!isUserLoaded) {
+    return (
+      <Box sx={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
+        <Navigation userName="Loading..." signOut={signOut} />
+        <Box sx={{ 
+          flex: 1, 
+          display: 'flex', 
+          alignItems: 'center', 
+          justifyContent: 'center',
+          color: 'white'
+        }}>
+          Loading user data...
+        </Box>
+      </Box>
+    );
+  }
 
   return (
     <Box sx={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
