@@ -1,94 +1,121 @@
 # get_game_outputs.py
 
-from typing import Any
-from tools.game_utils import read_game_files
+import boto3
+import json
+from typing import Dict, Any
 
-# 1. Tool Specification
-TOOL_SPEC = {
-    "name": "get_game_outputs",
-    "description": "Retrieve and read all output files for a specific NFL game from S3 based on pbp_game_id.",
-    "inputSchema": {
-        "json": {
-            "type": "object",
-            "properties": {
-                "pbp_game_id": {
-                    "type": "string",
-                    "description": "The play-by-play game ID to retrieve output files for"
-                }
-            },
-            "required": ["pbp_game_id"]
-        }
-    }
-}
-
-# 2. Tool Function
-def get_game_outputs(tool, **kwargs: Any):
+def get_game_outputs(unique_game_id: str) -> str:
     """
-    Retrieves all output files for a specific game from S3.
+    Pull all output files for a specific game from S3 and return as JSON objects.
     
     Args:
-        tool: Tool object containing toolUseId and input parameters
-        **kwargs: Additional keyword arguments
+        unique_game_id: Unique game identifier (e.g., '2024_2_18_DAL_WSH')
         
     Returns:
-        dict: Structured response with all output files content
+        str: Formatted information about game output files and their contents
     """
-    # Extract tool parameters
-    tool_use_id = tool["toolUseId"]
-    tool_input = tool["input"]
-    
-    # Get parameter values
-    pbp_game_id = tool_input.get("pbp_game_id")
-    
-    if not pbp_game_id:
-        return {
-            "toolUseId": tool_use_id,
-            "status": "error",
-            "content": [{"text": "pbp_game_id is required"}]
-        }
-    
-    # Use shared utility to read game files
-    result = read_game_files(pbp_game_id, "outputs")
-    
-    if not result["success"]:
-        return {
-            "toolUseId": tool_use_id,
-            "status": "error",
-            "content": [{"text": result["error"]}]
-        }
-    
-    # Prepare result summary
-    file_count = result["file_count"]
-    game_info = result["game_info"]
-    files_data = result["files"]
-    
-    if file_count == 0:
-        result_text = f"No readable output files found for game {pbp_game_id}"
-    else:
-        result_text = f"Successfully retrieved {file_count} output files for game {pbp_game_id} (Season {game_info['season']}, Week {game_info['week']}):\n\n"
+    try:
+        # Initialize AWS session
+        s3_client = boto3.client('s3')
+        s3_bucket = "alt-nfl-bucket"
         
-        # Add summary of files
-        for filename, file_info in files_data.items():
-            if 'error' in file_info:
-                result_text += f"❌ {filename}: {file_info['error']}\n"
-            else:
-                size_kb = file_info['size_bytes'] / 1024
-                result_text += f"✅ {filename}: {size_kb:.1f} KB\n"
+        # Parse the unique_game_id to construct S3 path
+        # Format: YYYY_T_WW_TEAM1_TEAM2
+        parts = unique_game_id.split('_')
+        if len(parts) < 4:
+            return f"Invalid unique_game_id format: {unique_game_id}"
         
-        result_text += f"\nS3 Path: {game_info['s3_path']}\n"
-        result_text += "\nOutput file contents are available in the response data."
-    
-    # Return structured response with file contents
-    return {
-        "toolUseId": tool_use_id,
-        "status": "success",
-        "content": [{"text": result_text}],
-        "data": {
-            "game_info": game_info,
-            "output_files": files_data,
-            "file_count": file_count
+        season = parts[0]  # e.g., "2024"
+        season_type_code = parts[1]  # e.g., "2"
+        week = parts[2]  # e.g., "18"
+        
+        # Map season type code to folder name
+        season_type_map = {
+            "1": "preseason",
+            "2": "regular-season", 
+            "3": "post-season"
         }
-    }
-
-# Attach TOOL_SPEC to function for Strands framework
-get_game_outputs.TOOL_SPEC = TOOL_SPEC
+        
+        season_type = season_type_map.get(season_type_code)
+        if not season_type:
+            return f"Invalid season type code: {season_type_code}"
+        
+        # Format week with leading zero if needed
+        week_formatted = f"week_{week.zfill(2)}"
+        
+        # Construct S3 path for outputs
+        s3_path = f"nfl_espn_data/season_{season}/{season_type}/{week_formatted}/{unique_game_id}/outputs/"
+        
+        # List all objects in the folder
+        response = s3_client.list_objects_v2(
+            Bucket=s3_bucket,
+            Prefix=s3_path
+        )
+        
+        if 'Contents' not in response:
+            return f"No files found in path: s3://{s3_bucket}/{s3_path}"
+        
+        # Dictionary to store all file contents
+        game_outputs = {}
+        
+        # Process each file
+        for obj in response['Contents']:
+            file_key = obj['Key']
+            filename = file_key.split('/')[-1]  # Get just the filename
+            
+            # Skip if it's just the folder itself
+            if filename == '':
+                continue
+            
+            try:
+                # Get file content
+                file_response = s3_client.get_object(Bucket=s3_bucket, Key=file_key)
+                file_content = file_response['Body'].read().decode('utf-8')
+                
+                # Try to parse as JSON first
+                try:
+                    game_outputs[filename] = json.loads(file_content)
+                except json.JSONDecodeError:
+                    # If not JSON, store as string
+                    game_outputs[filename] = file_content
+                    
+            except Exception as e:
+                game_outputs[filename] = {"error": f"Failed to read file: {str(e)}"}
+        
+        # Prepare result text
+        files_found = len([k for k in game_outputs.keys()])
+        result_text = f"GAME OUTPUT FILES FOR: {unique_game_id}\n"
+        result_text += f"S3 Path: s3://{s3_bucket}/{s3_path}\n"
+        result_text += f"Files Found: {files_found}\n\n"
+        
+        if files_found == 0:
+            result_text += "No output files found for this game."
+        else:
+            result_text += "FILES:\n"
+            for filename, file_data in game_outputs.items():
+                if isinstance(file_data, dict) and "error" not in file_data:
+                    result_text += f"  {filename}: JSON object with {len(file_data)} keys\n"
+                elif isinstance(file_data, str):
+                    result_text += f"  {filename}: Text file ({len(file_data)} characters)\n"
+                else:
+                    result_text += f"  {filename}: {type(file_data)}\n"
+            
+            # Show sample of first file if available
+            first_file = list(game_outputs.keys())[0]
+            result_text += f"\nSAMPLE FROM {first_file}:\n"
+            sample_data = game_outputs[first_file]
+            if isinstance(sample_data, dict):
+                # Show first few keys if it's a dict
+                sample_keys = list(sample_data.keys())[:5]
+                for key in sample_keys:
+                    result_text += f"  {key}: {type(sample_data[key])}\n"
+                if len(sample_data) > 5:
+                    result_text += f"  ... and {len(sample_data) - 5} more keys\n"
+            elif isinstance(sample_data, str):
+                # Show first 200 characters if it's a string
+                result_text += f"  {sample_data[:200]}...\n"
+        
+        return result_text
+        
+    except Exception as e:
+        return f"Error retrieving game outputs: {str(e)}"

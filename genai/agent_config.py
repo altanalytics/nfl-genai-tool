@@ -11,14 +11,11 @@ from strands.models import BedrockModel
 from strands.agent.conversation_manager import SlidingWindowConversationManager
 from strands.session.s3_session_manager import S3SessionManager
 from strands_tools import shell, editor, python_repl, calculator
-from tools.get_game_list import get_game_list
+from tools.get_schedules import get_schedules
+from tools.get_context import get_context
 from tools.get_game_inputs import get_game_inputs  
 from tools.get_game_outputs import get_game_outputs
 from tools.nfl_kb_search import nfl_kb_search
-from tools.resolve_team_name import resolve_team_name
-from tools.find_games_by_teams import find_games_by_teams
-from tools.get_context_games import get_context_games
-from tools.get_game_metadata import get_game_metadata
 
 def load_prompt_from_file(filename: str) -> str:
     """
@@ -46,7 +43,7 @@ def get_system_prompt(personality: str, model: str = 'us.amazon.nova-micro-v1:0'
     Get the system prompt for a given personality, including rules.
     
     Args:
-        personality: Either 'game_recap', 'nfl_stats', or custom prompt
+        personality: Either 'nfl_with_kb', 'nfl_without_kb', or custom prompt
         model: The model ID being used
         
     Returns:
@@ -56,10 +53,8 @@ def get_system_prompt(personality: str, model: str = 'us.amazon.nova-micro-v1:0'
     rules = load_prompt_from_file('rules')
     
     # Handle specific personalities
-    if personality == 'game_recap':
-        base_prompt = load_prompt_from_file('nfl_recap_generator')
-    elif personality == 'nfl_stats':
-        base_prompt = load_prompt_from_file('nfl_stats')
+    if personality in ['nfl_with_kb', 'nfl_without_kb']:
+        base_prompt = load_prompt_from_file('nfl_tools')
     else:
         # Treat as custom system prompt
         base_prompt = personality
@@ -71,7 +66,7 @@ def get_system_prompt(personality: str, model: str = 'us.amazon.nova-micro-v1:0'
     return f"{base_prompt}\n\n{rules}"
 
 def create_strands_agent(model = 'us.anthropic.claude-sonnet-4-20250514-v1:0',
-                         personality = 'game_recap',
+                         personality = 'nfl_without_kb',
                          session_id = None,
                          s3_bucket = None,
                          s3_prefix = None):
@@ -87,7 +82,7 @@ def create_strands_agent(model = 'us.anthropic.claude-sonnet-4-20250514-v1:0',
     
     Args:
         model (str): The Bedrock model ID to use
-        personality (str): Either 'game_recap', 'nfl_stats', or custom system prompt
+        personality (str): Either 'nfl_with_kb', 'nfl_without_kb', or custom system prompt
         
     Returns:
         Agent: Configured agent ready for use
@@ -141,22 +136,19 @@ def create_strands_agent(model = 'us.anthropic.claude-sonnet-4-20250514-v1:0',
     print(f"Using system prompt: {system_prompt}")
 
     # Configure tools based on personality
-    # Core tools (always available)
-    base_tools = [get_game_list, get_game_inputs, get_game_outputs]
+    # Core tools (always available for NFL personalities)
+    base_tools = [get_schedules, get_context, get_game_inputs, get_game_outputs]
     
-    # New improved tools for game recap workflow
-    recap_tools = [resolve_team_name, find_games_by_teams, get_context_games, get_game_metadata]
-    
-    # Add NFL knowledge base search tool only for nfl_stats profile
-    if personality == 'nfl_stats':
+    # Configure tools based on personality
+    if personality == 'nfl_with_kb':
         tools = base_tools + [nfl_kb_search]
-        print("Added NFL knowledge base search tool for nfl_stats profile")
-    elif personality == 'game_recap':
-        tools = base_tools + recap_tools
-        print("Added new recap generation tools for game_recap profile")
+        print("NFL personality with knowledge base search - all 5 tools available")
+    elif personality == 'nfl_without_kb':
+        tools = base_tools
+        print("NFL personality without knowledge base search - 4 core tools available")
     else:
         tools = base_tools
-        print("Using base tools only")
+        print("Using base NFL tools for custom personality")
 
     # Create session manager based on whether S3 parameters are provided
     session_manager = None

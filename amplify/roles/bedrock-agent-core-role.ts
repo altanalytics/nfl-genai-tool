@@ -22,14 +22,15 @@ export function createBedrockAgentCoreRole(scope: Construct): Role {
     resources: ['*']
   }));
 
-  // Add Bedrock permissions for model invocation
+  // Add Bedrock permissions for model invocation and knowledge base
   role.addToPolicy(new PolicyStatement({
     effect: Effect.ALLOW,
     actions: [
       'bedrock:InvokeModel',
       'bedrock:InvokeModelWithResponseStream',
       'bedrock:GetFoundationModel',
-      'bedrock:ListFoundationModels'
+      'bedrock:ListFoundationModels',
+      'bedrock-agent-runtime:Retrieve'
     ],
     resources: ['*']
   }));
@@ -57,33 +58,35 @@ export function createBedrockAgentCoreRole(scope: Construct): Role {
     resources: ['arn:aws:logs:*:*:*']
   }));
 
-  // Add S3 permissions for session storage
-  const sessionBucketName = process.env.AGENT_SESSION_S3 || 'agent-sessions-bucket-fallback';
+  // Add IAM permissions to pass roles if needed
   role.addToPolicy(new PolicyStatement({
     effect: Effect.ALLOW,
     actions: [
-      's3:GetObject',
-      's3:PutObject',
-      's3:DeleteObject',
-      's3:ListBucket'
+      'iam:PassRole'
     ],
     resources: [
-      `arn:aws:s3:::${sessionBucketName}`,
-      `arn:aws:s3:::${sessionBucketName}/*`
+      `arn:aws:iam::*:role/bedrock-*`,
+      `arn:aws:iam::*:role/AmazonBedrock*`
     ]
   }));
 
-  // Add S3 permissions for NFL data access
+  // Add Secrets Manager permissions
   role.addToPolicy(new PolicyStatement({
     effect: Effect.ALLOW,
     actions: [
-      's3:GetObject',
-      's3:ListBucket'
+      'secretsmanager:GetSecretValue',
+      'secretsmanager:DescribeSecret'
     ],
-    resources: [
-      'arn:aws:s3:::alt-nfl-bucket',
-      'arn:aws:s3:::alt-nfl-bucket/*'
-    ]
+    resources: ['*']
+  }));
+
+  // Add Lambda permissions
+  role.addToPolicy(new PolicyStatement({
+    effect: Effect.ALLOW,
+    actions: [
+      'lambda:InvokeFunction'
+    ],
+    resources: ['*']
   }));
 
   // Add Bedrock Knowledge Base permissions
@@ -99,15 +102,31 @@ export function createBedrockAgentCoreRole(scope: Construct): Role {
     resources: ['*']
   }));
 
-  // Add IAM permissions to pass roles if needed
+  // Add S3 permissions for NFL data access
   role.addToPolicy(new PolicyStatement({
     effect: Effect.ALLOW,
     actions: [
-      'iam:PassRole'
+      's3:GetObject',
+      's3:ListBucket'
     ],
     resources: [
-      `arn:aws:iam::*:role/bedrock-*`,
-      `arn:aws:iam::*:role/AmazonBedrock*`
+      'arn:aws:s3:::alt-nfl-bucket',
+      'arn:aws:s3:::alt-nfl-bucket/*'
+    ]
+  }));
+
+  // Add S3 permissions for session buckets (dynamic account/region)
+  role.addToPolicy(new PolicyStatement({
+    effect: Effect.ALLOW,
+    actions: [
+      's3:GetObject',
+      's3:PutObject',
+      's3:DeleteObject',
+      's3:ListBucket'
+    ],
+    resources: [
+      'arn:aws:s3:::nfl-agent-sessions-*',
+      'arn:aws:s3:::nfl-agent-sessions-*/*'
     ]
   }));
 

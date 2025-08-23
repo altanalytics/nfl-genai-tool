@@ -40,16 +40,16 @@ export const MODEL_OPTIONS: ModelOption[] = [
 
 export const PERSONALITY_OPTIONS: PersonalityOption[] = [
   {
-    id: 'game_recap',
-    name: 'Game Recap Expert',
-    description: 'Specializes in creating detailed game recaps and summaries'
+    id: 'nfl_with_kb',
+    name: 'NFL Assistant (Full)',
+    description: 'Complete NFL analysis with schedules, game context, data files, and knowledge base access'
   },
   {
-    id: 'nfl_stats',
-    name: 'NFL Stats Analyst',
-    description: 'Deep statistical knowledge with access to NFL knowledge base'
+    id: 'nfl_without_kb',
+    name: 'NFL Assistant (Data Only)',
+    description: 'Pure NFL data analysis with schedules, game context, and data files (no knowledge base)'
   }
 ];
 
 export const DEFAULT_MODEL = 'us.amazon.nova-pro-v1:0';
-export const DEFAULT_PERSONALITY = 'game_recap';
+export const DEFAULT_PERSONALITY = 'nfl_with_kb';
