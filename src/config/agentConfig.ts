@@ -27,7 +27,7 @@ export const MODEL_OPTIONS: ModelOption[] = [
     description: 'Most capable Nova model'
   },
   {
-    id: 'anthropic.claude-3-5-haiku-20241022-v1:0',
+    id: 'us.anthropic.claude-3-5-haiku-20241022-v1:0',
     name: 'Claude Haiku 3.5',
     description: 'Quick advanced reasoning and analysis'
   },

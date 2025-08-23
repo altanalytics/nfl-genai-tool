@@ -11,7 +11,14 @@ from strands.models import BedrockModel
 from strands.agent.conversation_manager import SlidingWindowConversationManager
 from strands.session.s3_session_manager import S3SessionManager
 from strands_tools import shell, editor, python_repl, calculator
-from tools import get_game_list, get_game_inputs, get_game_outputs, nfl_kb_search
+from tools.get_game_list import get_game_list
+from tools.get_game_inputs import get_game_inputs  
+from tools.get_game_outputs import get_game_outputs
+from tools.nfl_kb_search import nfl_kb_search
+from tools.resolve_team_name import resolve_team_name
+from tools.find_games_by_teams import find_games_by_teams
+from tools.get_context_games import get_context_games
+from tools.get_game_metadata import get_game_metadata
 
 def load_prompt_from_file(filename: str) -> str:
     """
@@ -50,7 +57,7 @@ def get_system_prompt(personality: str, model: str = 'us.amazon.nova-micro-v1:0'
     
     # Handle specific personalities
     if personality == 'game_recap':
-        base_prompt = load_prompt_from_file('game_recap')
+        base_prompt = load_prompt_from_file('nfl_recap_generator')
     elif personality == 'nfl_stats':
         base_prompt = load_prompt_from_file('nfl_stats')
     else:
@@ -63,7 +70,7 @@ def get_system_prompt(personality: str, model: str = 'us.amazon.nova-micro-v1:0'
     # Combine base prompt with rules
     return f"{base_prompt}\n\n{rules}"
 
-def create_strands_agent(model = 'us.amazon.nova-premier-v1:0',
+def create_strands_agent(model = 'us.anthropic.claude-sonnet-4-20250514-v1:0',
                          personality = 'game_recap',
                          session_id = None,
                          s3_bucket = None,
@@ -75,6 +82,7 @@ def create_strands_agent(model = 'us.amazon.nova-premier-v1:0',
     - us.amazon.nova-micro-v1:0
     - us.amazon.nova-premier-v1:0
     - us.amazon.nova-pro-v1:0
+    - us.anthropic.claude-3-5-haiku-20241022-v1:0
     - us.anthropic.claude-sonnet-4-20250514-v1:0
     
     Args:
@@ -85,13 +93,41 @@ def create_strands_agent(model = 'us.amazon.nova-premier-v1:0',
         Agent: Configured agent ready for use
     """
     
-    # Configure the Bedrock model
-    bedrock_model = BedrockModel(
-        model_id=model,
-        max_tokens=10000,
-        temperature=0.3,
-        top_p=0.8,
-    )
+    # Model-specific max token limits
+    model_token_limits = {
+        'us.anthropic.claude-3-5-haiku-20241022-v1:0': 8000,  # Haiku limit is 8192, use 8000 for safety
+        'anthropic.claude-3-5-haiku-20241022-v1:0': 8000,     # Non-cross-region version
+    }
+    
+    # Get max tokens for the specific model, default to 20000 for other models
+    max_tokens = model_token_limits.get(model, 10000)
+    
+    # Check if this is an Anthropic model that will use thinking
+    is_anthropic_model = model.startswith('us.anthropic.') or model.startswith('anthropic.')
+    
+    # Configure the Bedrock model with Anthropic thinking capabilities
+    bedrock_model_config = {
+        "model_id": model,
+        "max_tokens": max_tokens,
+        #"top_p": 0.8,
+    }
+    
+    # Add thinking configuration for Anthropic models
+    if is_anthropic_model:
+        bedrock_model_config["additional_request_fields"] = {
+            "anthropic_beta": ["interleaved-thinking-2025-05-14"],
+            "thinking": {
+                "type": "enabled",
+                "budget_tokens": 2048
+            }
+        }
+        # Anthropic requires temperature=1 when thinking is enabled
+        bedrock_model_config["temperature"] = 1
+    else:
+        # Use custom temperature for non-Anthropic models
+        bedrock_model_config["temperature"] = 0.3
+    
+    bedrock_model = BedrockModel(**bedrock_model_config)
 
     # Configure conversation management for production
     conversation_manager = SlidingWindowConversationManager(
@@ -108,19 +144,19 @@ def create_strands_agent(model = 'us.amazon.nova-premier-v1:0',
     # Core tools (always available)
     base_tools = [get_game_list, get_game_inputs, get_game_outputs]
     
-    # Specialized tools for micro models (commented out for advanced model testing)
-    # Uncomment these imports and add to base_tools for Nova Micro or structured guidance:
-    # from tools.get_recent_games import get_recent_games
-    # from tools.get_head_to_head import get_head_to_head
-    # base_tools.extend([get_recent_games, get_head_to_head])
+    # New improved tools for game recap workflow
+    recap_tools = [resolve_team_name, find_games_by_teams, get_context_games, get_game_metadata]
     
     # Add NFL knowledge base search tool only for nfl_stats profile
     if personality == 'nfl_stats':
         tools = base_tools + [nfl_kb_search]
         print("Added NFL knowledge base search tool for nfl_stats profile")
+    elif personality == 'game_recap':
+        tools = base_tools + recap_tools
+        print("Added new recap generation tools for game_recap profile")
     else:
         tools = base_tools
-        print("Using base tools only (no knowledge base search) - testing advanced model reasoning")
+        print("Using base tools only")
 
     # Create session manager based on whether S3 parameters are provided
     session_manager = None

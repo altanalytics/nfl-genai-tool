@@ -89,3 +89,6 @@ def get_game_outputs(tool, **kwargs: Any):
             "file_count": file_count
         }
     }
+
+# Attach TOOL_SPEC to function for Strands framework
+get_game_outputs.TOOL_SPEC = TOOL_SPEC

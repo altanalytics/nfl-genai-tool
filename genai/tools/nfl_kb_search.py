@@ -6,7 +6,16 @@ from typing import Any
 # 1. Tool Specification
 TOOL_SPEC = {
     "name": "nfl_kb_search",
-    "description": "Search the NFL knowledge base for statistical information, historical data, and analysis.",
+    "description": """Search the NFL knowledge base for statistical information, historical data, and analysis.
+
+This tool provides access to comprehensive NFL data, enabling queries about:
+- Player statistics and performance metrics
+- Team records and historical data
+- Game results and play-by-play analysis
+- Season trends and comparative analysis
+- Draft information and player profiles
+
+Results are sorted by relevance score and include source metadata.""",
     "inputSchema": {
         "json": {
             "type": "object",
@@ -22,8 +31,10 @@ TOOL_SPEC = {
                 },
                 "score": {
                     "type": "number",
-                    "description": "Minimum relevance score threshold (0.0-1.0). Default is 0.4.",
-                    "default": 0.4
+                    "description": "Minimum relevance score threshold (0.0-1.0). Results below this score will be filtered out. Default is 0.4.",
+                    "default": 0.4,
+                    "minimum": 0.0,
+                    "maximum": 1.0
                 }
             },
             "required": ["text"]
@@ -64,3 +75,6 @@ def nfl_kb_search(tool, **kwargs: Any):
     
     # Call the original retrieve function with our pre-configured settings
     return retrieve(enhanced_tool, **kwargs)
+
+# Attach TOOL_SPEC to function for Strands framework
+nfl_kb_search.TOOL_SPEC = TOOL_SPEC

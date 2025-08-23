@@ -47,6 +47,11 @@ def get_game_list(tool, **kwargs: Any):
     Returns:
         dict: Structured response with filtered game data
     """
+    # CRITICAL: Log that this function is actually being called
+    print("🚨 GET_GAME_LIST FUNCTION CALLED! 🚨")
+    print(f"Tool input: {tool}")
+    print(f"Kwargs: {kwargs}")
+    
     # Extract tool parameters
     tool_use_id = tool["toolUseId"]
     tool_input = tool["input"]
@@ -56,6 +61,8 @@ def get_game_list(tool, **kwargs: Any):
     week = tool_input.get("week")
     team = tool_input.get("team")
     pbp_game_id = tool_input.get("pbp_game_id")
+    
+    print(f"🔍 Searching for: season={season}, week={week}, team={team}, pbp_game_id={pbp_game_id}")
 
     try:
         # Initialize S3 client
@@ -158,3 +165,6 @@ def get_game_list(tool, **kwargs: Any):
             "status": "error",
             "content": [{"text": error_message}]
         }
+
+# Attach TOOL_SPEC to function for Strands framework
+get_game_list.TOOL_SPEC = TOOL_SPEC

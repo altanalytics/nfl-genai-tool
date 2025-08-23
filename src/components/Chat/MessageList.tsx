@@ -9,25 +9,32 @@ interface MessageListProps {
   streamingResponse: string;
   isLoading: boolean;
   messagesEndRef: React.RefObject<HTMLDivElement>;
+  chatContainerRef?: React.RefObject<HTMLDivElement>;
+  onScroll?: () => void;
 }
 
 const MessageList: React.FC<MessageListProps> = ({ 
   messages, 
   streamingResponse, 
   isLoading, 
-  messagesEndRef 
+  messagesEndRef,
+  chatContainerRef,
+  onScroll
 }) => {
   return (
-    <Box sx={{ 
-      flex: 1, 
-      overflow: 'auto',
-      p: 3,
-      display: 'flex',
-      flexDirection: 'column',
-      gap: 2,
-      '&::-webkit-scrollbar': {
-        width: 6,
-      },
+    <Box 
+      ref={chatContainerRef}
+      onScroll={onScroll}
+      sx={{ 
+        flex: 1, 
+        overflow: 'auto',
+        p: 3,
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 2,
+        '&::-webkit-scrollbar': {
+          width: 6,
+        },
       '&::-webkit-scrollbar-track': {
         background: 'transparent',
       },
