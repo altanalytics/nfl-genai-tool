@@ -3,28 +3,55 @@
 import pandas as pd
 import boto3
 from io import StringIO
-from typing import Optional
+from typing import Any
 
-def get_schedules(
-    team1: Optional[str] = None,
-    team2: Optional[str] = None, 
-    season: Optional[int] = None,
-    week: Optional[int] = None,
-    season_type: Optional[str] = None
-) -> str:
+TOOL_SPEC = {
+    "name": "get_schedules",
+    "description": "Search for NFL schedules with flexible criteria including team names, season, week, and season type.",
+    "inputSchema": {
+        "json": {
+            "type": "object",
+            "properties": {
+                "team1": {
+                    "type": "string",
+                    "description": "First team name in any format (case insensitive) - Washington, Commanders, WSH, etc."
+                },
+                "team2": {
+                    "type": "string",
+                    "description": "Second team for head-to-head matches (optional)"
+                },
+                "season": {
+                    "type": "integer",
+                    "description": "Season year (optional)"
+                },
+                "week": {
+                    "type": "integer",
+                    "description": "Week number (optional)"
+                },
+                "season_type": {
+                    "type": "string",
+                    "description": "Season type - 'pre', 'regular', or 'post' (optional)"
+                }
+            },
+            "required": []
+        }
+    }
+}
+
+def get_schedules(tool, **kwargs: Any):
     """
     Search for NFL schedules with flexible criteria including team names, season, week, and season type.
-    
-    Args:
-        team1: First team name in any format (case insensitive) - Washington, Commanders, WSH, etc.
-        team2: Second team for head-to-head matches (optional)
-        season: Season year (optional)
-        week: Week number (optional)
-        season_type: Season type - 'pre', 'regular', or 'post' (optional)
-        
-    Returns:
-        str: Formatted schedule data matching the criteria
     """
+    tool_use_id = tool["toolUseId"]
+    tool_input = tool["input"]
+    
+    # Get parameters from tool input
+    team1 = tool_input.get("team1")
+    team2 = tool_input.get("team2")
+    season = tool_input.get("season")
+    week = tool_input.get("week")
+    season_type = tool_input.get("season_type")
+    
     try:
         # Initialize AWS session
         s3_client = boto3.client('s3')
@@ -40,7 +67,7 @@ def get_schedules(
         schedule_df['date_time'] = pd.to_datetime(schedule_df['date_time'])
         schedule_df = schedule_df.sort_values('date_time', ascending=False)
         
-        def find_team_abbr(team_input: str) -> Optional[str]:
+        def find_team_abbr(team_input: str) -> str:
             """Find team abbreviation from any team name format (case insensitive)"""
             team_input = team_input.lower()
             
@@ -56,7 +83,7 @@ def get_schedules(
             
             return None
         
-        def get_season_type_code(season_type_input: str) -> Optional[int]:
+        def get_season_type_code(season_type_input: str) -> int:
             """Convert season type string to numeric code"""
             season_type_input = season_type_input.lower().strip()
             
@@ -88,13 +115,21 @@ def get_schedules(
         if team1:
             team1_abbr = find_team_abbr(team1)
             if not team1_abbr:
-                return f"Could not find team '{team1}' in team mapping"
+                return {
+                    "toolUseId": tool_use_id,
+                    "status": "error",
+                    "content": [{"text": f"Could not find team '{team1}' in team mapping"}]
+                }
             
             if team2:
                 # Head-to-head matches
                 team2_abbr = find_team_abbr(team2)
                 if not team2_abbr:
-                    return f"Could not find team '{team2}' in team mapping"
+                    return {
+                        "toolUseId": tool_use_id,
+                        "status": "error",
+                        "content": [{"text": f"Could not find team '{team2}' in team mapping"}]
+                    }
                 
                 df = df[
                     ((df['home_team'] == team1_abbr) & (df['away_team'] == team2_abbr)) |
@@ -119,11 +154,20 @@ def get_schedules(
         num_games = len(result_df)
         
         if num_games == 0:
-            return "No games found matching the specified criteria."
+            result_text = "No games found matching the specified criteria."
         else:
             result_text = f"Found {num_games} game(s) matching the criteria:\n\n"
             result_text += result_df.to_string(index=False)
-            return result_text
+        
+        return {
+            "toolUseId": tool_use_id,
+            "status": "success",
+            "content": [{"text": result_text}]
+        }
         
     except Exception as e:
-        return f"Error retrieving schedules: {str(e)}"
+        return {
+            "toolUseId": tool_use_id,
+            "status": "error",
+            "content": [{"text": f"Error retrieving schedules: {str(e)}"}]
+        }

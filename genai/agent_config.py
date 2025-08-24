@@ -11,11 +11,11 @@ from strands.models import BedrockModel
 from strands.agent.conversation_manager import SlidingWindowConversationManager
 from strands.session.s3_session_manager import S3SessionManager
 from strands_tools import shell, editor, python_repl, calculator
-from tools.get_schedules import get_schedules
-from tools.get_context import get_context
-from tools.get_game_inputs import get_game_inputs  
-from tools.get_game_outputs import get_game_outputs
-from tools.nfl_kb_search import nfl_kb_search
+import tools.get_schedules as get_schedules
+import tools.get_context as get_context
+import tools.get_game_inputs as get_game_inputs
+import tools.get_game_outputs as get_game_outputs
+import tools.nfl_kb_search as nfl_kb_search
 
 def load_prompt_from_file(filename: str) -> str:
     """
@@ -168,6 +168,11 @@ def create_strands_agent(model = 'us.anthropic.claude-sonnet-4-20250514-v1:0',
     else:
         print("Using default SlidingWindowConversationManager (no S3 session persistence)")
 
+    # Debug: Print tool information
+    print(f"DEBUG: Number of tools configured: {len(tools)}")
+    for i, tool in enumerate(tools):
+        print(f"DEBUG: Tool {i}: {tool.__name__ if hasattr(tool, '__name__') else str(tool)}")
+    
     # Create and return the agent
     strands_agent = Agent(
         model=bedrock_model,
@@ -178,4 +183,5 @@ def create_strands_agent(model = 'us.anthropic.claude-sonnet-4-20250514-v1:0',
         tools=tools
     )
     
+    print(f"DEBUG: Agent created successfully with {len(tools)} tools")
     return strands_agent
