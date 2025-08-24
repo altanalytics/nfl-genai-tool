@@ -2,6 +2,7 @@ import React from 'react';
 import { Box, Typography, Avatar } from '@mui/material';
 import { Person } from '@mui/icons-material';
 import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import { Message } from '../../types/message';
 import { formatTime } from '../../utils/sessionUtils';
 import TypingIndicator from './TypingIndicator';
@@ -28,6 +29,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({ message, isStreaming }) =
 
     return (
       <ReactMarkdown
+        remarkPlugins={[remarkGfm]}
         components={{
           code: ({ className, children, ...props }: any) => {
             const match = /language-(\w+)/.exec(className || '');
@@ -163,6 +165,85 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({ message, isStreaming }) =
                   mx: -0.5,
                   my: -0.25,
                   borderRadius: 0.5,
+                },
+              }}
+            >
+              {children}
+            </Box>
+          ),
+          table: ({ children }) => (
+            <Box
+              component="table"
+              sx={{
+                width: '100%',
+                borderCollapse: 'collapse',
+                my: 2,
+                border: '1px solid #e2e8f0',
+                borderRadius: 1,
+                overflow: 'hidden',
+                fontSize: '13px',
+              }}
+            >
+              {children}
+            </Box>
+          ),
+          thead: ({ children }) => (
+            <Box
+              component="thead"
+              sx={{
+                background: '#f8fafc',
+              }}
+            >
+              {children}
+            </Box>
+          ),
+          tbody: ({ children }) => (
+            <Box component="tbody">
+              {children}
+            </Box>
+          ),
+          tr: ({ children }) => (
+            <Box
+              component="tr"
+              sx={{
+                '&:nth-of-type(even)': {
+                  background: '#f9fafb',
+                },
+                '&:hover': {
+                  background: '#f1f5f9',
+                },
+              }}
+            >
+              {children}
+            </Box>
+          ),
+          th: ({ children }) => (
+            <Box
+              component="th"
+              sx={{
+                p: 1.5,
+                textAlign: 'left',
+                fontWeight: 600,
+                color: '#374151',
+                borderBottom: '2px solid #e5e7eb',
+                borderRight: '1px solid #e5e7eb',
+                '&:last-child': {
+                  borderRight: 'none',
+                },
+              }}
+            >
+              {children}
+            </Box>
+          ),
+          td: ({ children }) => (
+            <Box
+              component="td"
+              sx={{
+                p: 1.5,
+                borderBottom: '1px solid #e5e7eb',
+                borderRight: '1px solid #e5e7eb',
+                '&:last-child': {
+                  borderRight: 'none',
                 },
               }}
             >

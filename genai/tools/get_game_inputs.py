@@ -53,7 +53,7 @@ def get_game_inputs(tool, **kwargs: Any):
         # Map season type code to folder name
         season_type_map = {
             "1": "preseason",
-            "2": "regular_season", 
+            "2": "regular-season", 
             "3": "postseason"
         }
         
@@ -65,8 +65,10 @@ def get_game_inputs(tool, **kwargs: Any):
                 "content": [{"text": f"Invalid season type code: {season_type_code}"}]
             }
         
-        # Construct S3 prefix for input files
-        s3_prefix = f"games/{season}/{season_type_folder}/week_{week}/{unique_game_id}/inputs/"
+        # Construct S3 prefix for input files using actual bucket structure
+        # Format: nfl_espn_data/season_YYYY/season-type/week_XX/game_id/inputs/
+        week_padded = week.zfill(2)  # Ensure 2-digit week (08 instead of 8)
+        s3_prefix = f"nfl_espn_data/season_{season}/{season_type_folder}/week_{week_padded}/{unique_game_id}/inputs/"
         
         # List all files in the inputs directory
         response = s3_client.list_objects_v2(Bucket=s3_bucket, Prefix=s3_prefix)

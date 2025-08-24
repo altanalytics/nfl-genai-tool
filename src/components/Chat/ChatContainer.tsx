@@ -57,12 +57,12 @@ const ChatContainer: React.FC<ChatContainerProps> = ({ userName }) => {
     console.log('Current Session ID:', sessionId);
   }, [sessionId]);
 
-  // Initialize with "hello" when component mounts, personality changes, model changes, or new chat is started
+  // Initialize with "hello" only when component mounts or new chat is started
   useEffect(() => {
     if (!isInitialized) {
       initializeChat();
     }
-  }, [selectedPersonality, selectedModel, isInitialized]); // Re-run when personality, model, or initialization state changes
+  }, [isInitialized]); // Only depend on initialization state
 
   const initializeChat = async () => {
     console.log('=== INITIALIZING CHAT ===');

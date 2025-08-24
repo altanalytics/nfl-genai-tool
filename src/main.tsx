@@ -22,7 +22,5 @@ console.log('Final Amplify config:', Amplify.getConfig());
 console.log('Custom outputs available:', outputs.custom);
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
-  <React.StrictMode>
-    <App />
-  </React.StrictMode>
+  <App />
 );
