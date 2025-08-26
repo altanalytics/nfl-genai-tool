@@ -1,7 +1,7 @@
 import json
 import boto3
 import time
-import pandas as pd
+# import pandas as pd  # Removed to avoid Lambda import issues
 import os
 
 def lambda_handler(event, context):
@@ -132,7 +132,8 @@ def execute_athena_query(request):
             QueryExecutionContext={'Database': database},
             ResultConfiguration={
                 'OutputLocation': f's3://{s3_output_bucket}/{s3_output_prefix}'
-            }
+            },
+            WorkGroup='primary'
         )
         
         query_execution_id = response['QueryExecutionId']
@@ -188,20 +189,24 @@ def execute_athena_query(request):
                     row_data.append('')  # Handle null values
             data_rows.append(row_data)
         
-        # Create DataFrame for better formatting
+        # Create formatted data structure without pandas
         if data_rows:
-            df = pd.DataFrame(data_rows, columns=columns)
-            
             # Limit results to prevent overwhelming output
             max_rows = 100
-            if len(df) > max_rows:
-                result_message = f"Query returned {len(df)} rows. Showing first {max_rows} rows."
-                df = df.head(max_rows)
+            if len(data_rows) > max_rows:
+                result_message = f"Query returned {len(data_rows)} rows. Showing first {max_rows} rows."
+                limited_rows = data_rows[:max_rows]
             else:
-                result_message = f"Query returned {len(df)} rows."
+                result_message = f"Query returned {len(data_rows)} rows."
+                limited_rows = data_rows
             
-            # Convert to dict for JSON serialization
-            result_data = df.to_dict('records')
+            # Convert to list of dictionaries for JSON serialization
+            result_data = []
+            for row in limited_rows:
+                row_dict = {}
+                for i, col in enumerate(columns):
+                    row_dict[col] = row[i] if i < len(row) else None
+                result_data.append(row_dict)
             
             return {
                 'success': True,

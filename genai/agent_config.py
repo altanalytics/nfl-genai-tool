@@ -69,8 +69,8 @@ def get_system_prompt(personality: str, model: str = 'us.amazon.nova-micro-v1:0'
     # Combine base prompt with rules
     return f"{base_prompt}\n\n{rules}"
 
-def create_strands_agent(model = 'us.anthropic.claude-sonnet-4-20250514-v1:0',
-                         personality = 'nfl_game_recap',
+def create_strands_agent(model = 'us.amazon.nova-pro-v1:0',
+                         personality = 'nfl_analyst',
                          session_id = None,
                          s3_bucket = None,
                          s3_prefix = None,
@@ -97,41 +97,13 @@ def create_strands_agent(model = 'us.anthropic.claude-sonnet-4-20250514-v1:0',
         Agent: Configured agent ready for use
     """
     
-    # Model-specific max token limits
-    model_token_limits = {
-        'us.anthropic.claude-3-5-haiku-20241022-v1:0': 8000,  # Haiku limit is 8192, use 8000 for safety
-        'anthropic.claude-3-5-haiku-20241022-v1:0': 8000,     # Non-cross-region version
-    }
-    
-    # Get max tokens for the specific model, default to 20000 for other models
-    max_tokens = model_token_limits.get(model, 10000)
-    
-    # Check if this is an Anthropic model that will use thinking
-    is_anthropic_model = model.startswith('us.anthropic.') or model.startswith('anthropic.')
-    
-    # Configure the Bedrock model with Anthropic thinking capabilities
-    bedrock_model_config = {
-        "model_id": model,
-        "max_tokens": max_tokens,
-        #"top_p": 0.8,
-    }
-    
-    # Add thinking configuration for Anthropic models
-    if is_anthropic_model:
-        bedrock_model_config["additional_request_fields"] = {
-            "anthropic_beta": ["interleaved-thinking-2025-05-14"],
-            "thinking": {
-                "type": "enabled",
-                "budget_tokens": 2048
-            }
-        }
-        # Anthropic requires temperature=1 when thinking is enabled
-        bedrock_model_config["temperature"] = 1
-    else:
-        # Use custom temperature for non-Anthropic models
-        bedrock_model_config["temperature"] = 0.3
-    
-    bedrock_model = BedrockModel(**bedrock_model_config)
+    # Configure the Bedrock model (simplified like PE)
+    bedrock_model = BedrockModel(
+        inference_profile_id=model,
+        max_tokens=5000,
+        temperature=0.7,
+        top_p=0.8,
+    )
 
     # Configure conversation management for production
     conversation_manager = SlidingWindowConversationManager(
@@ -142,27 +114,20 @@ def create_strands_agent(model = 'us.anthropic.claude-sonnet-4-20250514-v1:0',
     system_prompt = get_system_prompt(personality, model)
     
     print(f"Received personality parameter: '{personality}'")
-    print(f"Using system prompt: {system_prompt}")
 
-    # Configure tools based on personality
-    # Core tools (always available for NFL personalities)
-    base_tools = [get_schedules, get_context, get_game_inputs, get_game_outputs]
-    
-    # Configure tools based on personality
+    # Create and return the agent (simplified like PE)
     if tools is not None:
-        # Use provided tools (e.g., from MCP client for nfl_analyst)
+        # Use provided tools (e.g., from MCP client)
         print(f"Using provided MCP tools: {[getattr(tool, 'tool_name', str(tool)) for tool in tools]}")
         tools_list = tools
-    elif personality == 'nfl_game_recap':
-        tools_list = base_tools  # Only the 4 core tools: schedules, context, game_inputs, game_outputs
-        print("NFL Game Recap Specialist - 4 core tools available")
-    elif personality == 'nfl_analyst':
-        # This should use MCP tools, but fallback to empty if no tools provided
-        tools_list = []
-        print("NFL Analyst - expecting MCP tools to be provided")
     else:
-        tools_list = base_tools
-        print("Using base NFL tools for custom personality")
+        # Use local tools for other personalities
+        print("Using local NFL tools")
+        tools_list = [get_schedules, get_context, get_game_inputs, get_game_outputs]
+        
+        # Add knowledge base tool for nfl_game_recap personality
+        if personality == 'nfl_game_recap':
+            tools_list.append(nfl_kb_search)
 
     # Create session manager based on whether S3 parameters are provided
     session_manager = None
@@ -182,20 +147,13 @@ def create_strands_agent(model = 'us.anthropic.claude-sonnet-4-20250514-v1:0',
     else:
         print("Using default SlidingWindowConversationManager (no S3 session persistence)")
 
-    # Debug: Print tool information
-    print(f"DEBUG: Number of tools configured: {len(tools_list)}")
-    for i, tool in enumerate(tools_list):
-        print(f"DEBUG: Tool {i}: {tool.__name__ if hasattr(tool, '__name__') else str(tool)}")
-    
     # Create and return the agent
     strands_agent = Agent(
         model=bedrock_model,
         system_prompt=system_prompt,
         conversation_manager=conversation_manager,
-        session_manager=session_manager,  # Add session manager
-        # Adding tools is what triggers "Thinking..." in the UI
+        session_manager=session_manager,
         tools=tools_list
     )
     
-    print(f"DEBUG: Agent created successfully with {len(tools_list)} tools")
     return strands_agent
