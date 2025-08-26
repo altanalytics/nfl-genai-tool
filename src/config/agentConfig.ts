@@ -40,16 +40,16 @@ export const MODEL_OPTIONS: ModelOption[] = [
 
 export const PERSONALITY_OPTIONS: PersonalityOption[] = [
   {
-    id: 'nfl_with_kb',
-    name: 'NFL Assistant (Full)',
-    description: 'Complete NFL analysis with schedules, game context, data files, and knowledge base access'
+    id: 'nfl_analyst',
+    name: 'NFL Analyst',
+    description: 'Database-driven statistical analysis and insights using MCP microservices for complex queries and trends'
   },
   {
-    id: 'nfl_without_kb',
-    name: 'NFL Assistant (Data Only)',
-    description: 'Pure NFL data analysis with schedules, game context, and data files (no knowledge base)'
+    id: 'nfl_game_recap',
+    name: 'Game Recap Specialist',
+    description: 'Narrative-driven game recaps and analysis with context-aware storytelling and player narratives'
   }
 ];
 
 export const DEFAULT_MODEL = 'us.amazon.nova-pro-v1:0';
-export const DEFAULT_PERSONALITY = 'nfl_without_kb';
+export const DEFAULT_PERSONALITY = 'nfl_analyst';

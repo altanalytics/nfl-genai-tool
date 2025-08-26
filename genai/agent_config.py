@@ -54,8 +54,11 @@ def get_system_prompt(personality: str, model: str = 'us.amazon.nova-micro-v1:0'
     rules = load_prompt_from_file('rules')
     
     # Handle specific personalities
-    if personality in ['nfl_with_kb', 'nfl_without_kb']:
-        base_prompt = load_prompt_from_file('nfl_tools')
+    if personality in ['nfl_game_recap', 'nfl_analyst']:
+        if personality == 'nfl_analyst':
+            base_prompt = load_prompt_from_file('nfl_analyst')
+        else:
+            base_prompt = load_prompt_from_file('nfl_tools')
     else:
         # Treat as custom system prompt
         base_prompt = personality
@@ -67,10 +70,11 @@ def get_system_prompt(personality: str, model: str = 'us.amazon.nova-micro-v1:0'
     return f"{base_prompt}\n\n{rules}"
 
 def create_strands_agent(model = 'us.anthropic.claude-sonnet-4-20250514-v1:0',
-                         personality = 'nfl_without_kb',
+                         personality = 'nfl_game_recap',
                          session_id = None,
                          s3_bucket = None,
-                         s3_prefix = None):
+                         s3_prefix = None,
+                         tools = None):
     """
     Create and return a configured Strands agent instance.
     
@@ -83,7 +87,11 @@ def create_strands_agent(model = 'us.anthropic.claude-sonnet-4-20250514-v1:0',
     
     Args:
         model (str): The Bedrock model ID to use
-        personality (str): Either 'nfl_with_kb', 'nfl_without_kb', or custom system prompt
+        personality (str): Either 'nfl_game_recap', 'nfl_analyst', or custom system prompt
+        session_id (str): Session ID for S3 session management
+        s3_bucket (str): S3 bucket for session storage
+        s3_prefix (str): S3 prefix for session storage
+        tools (list): Optional list of tools to use (for MCP integration)
         
     Returns:
         Agent: Configured agent ready for use
@@ -141,14 +149,19 @@ def create_strands_agent(model = 'us.anthropic.claude-sonnet-4-20250514-v1:0',
     base_tools = [get_schedules, get_context, get_game_inputs, get_game_outputs]
     
     # Configure tools based on personality
-    if personality == 'nfl_with_kb':
-        tools = base_tools + [nfl_kb_search, query_athena]
-        print("NFL personality with knowledge base search and Athena querying - all 6 tools available")
-    elif personality == 'nfl_without_kb':
-        tools = base_tools
-        print("NFL personality without knowledge base search - 4 core tools available")
+    if tools is not None:
+        # Use provided tools (e.g., from MCP client for nfl_analyst)
+        print(f"Using provided MCP tools: {[getattr(tool, 'tool_name', str(tool)) for tool in tools]}")
+        tools_list = tools
+    elif personality == 'nfl_game_recap':
+        tools_list = base_tools  # Only the 4 core tools: schedules, context, game_inputs, game_outputs
+        print("NFL Game Recap Specialist - 4 core tools available")
+    elif personality == 'nfl_analyst':
+        # This should use MCP tools, but fallback to empty if no tools provided
+        tools_list = []
+        print("NFL Analyst - expecting MCP tools to be provided")
     else:
-        tools = base_tools
+        tools_list = base_tools
         print("Using base NFL tools for custom personality")
 
     # Create session manager based on whether S3 parameters are provided
@@ -170,8 +183,8 @@ def create_strands_agent(model = 'us.anthropic.claude-sonnet-4-20250514-v1:0',
         print("Using default SlidingWindowConversationManager (no S3 session persistence)")
 
     # Debug: Print tool information
-    print(f"DEBUG: Number of tools configured: {len(tools)}")
-    for i, tool in enumerate(tools):
+    print(f"DEBUG: Number of tools configured: {len(tools_list)}")
+    for i, tool in enumerate(tools_list):
         print(f"DEBUG: Tool {i}: {tool.__name__ if hasattr(tool, '__name__') else str(tool)}")
     
     # Create and return the agent
@@ -181,8 +194,8 @@ def create_strands_agent(model = 'us.anthropic.claude-sonnet-4-20250514-v1:0',
         conversation_manager=conversation_manager,
         session_manager=session_manager,  # Add session manager
         # Adding tools is what triggers "Thinking..." in the UI
-        tools=tools
+        tools=tools_list
     )
     
-    print(f"DEBUG: Agent created successfully with {len(tools)} tools")
+    print(f"DEBUG: Agent created successfully with {len(tools_list)} tools")
     return strands_agent
