@@ -16,6 +16,7 @@ import tools.get_context as get_context
 import tools.get_game_inputs as get_game_inputs
 import tools.get_game_outputs as get_game_outputs
 import tools.nfl_kb_search as nfl_kb_search
+import tools.query_athena as query_athena
 
 def load_prompt_from_file(filename: str) -> str:
     """
@@ -141,8 +142,8 @@ def create_strands_agent(model = 'us.anthropic.claude-sonnet-4-20250514-v1:0',
     
     # Configure tools based on personality
     if personality == 'nfl_with_kb':
-        tools = base_tools + [nfl_kb_search]
-        print("NFL personality with knowledge base search - all 5 tools available")
+        tools = base_tools + [nfl_kb_search, query_athena]
+        print("NFL personality with knowledge base search and Athena querying - all 6 tools available")
     elif personality == 'nfl_without_kb':
         tools = base_tools
         print("NFL personality without knowledge base search - 4 core tools available")

@@ -7,6 +7,7 @@ import { userSignupNotification } from './functions/user-signup-notification/res
 import { Duration, RemovalPolicy } from 'aws-cdk-lib';
 import { Effect, PolicyStatement } from 'aws-cdk-lib/aws-iam';
 import { Bucket, BucketEncryption } from 'aws-cdk-lib/aws-s3';
+import { BucketDeployment, Source } from 'aws-cdk-lib/aws-s3-deployment';
 import {
   FunctionUrlAuthType,
   HttpMethod,
@@ -16,6 +17,7 @@ import {
 import { Topic } from 'aws-cdk-lib/aws-sns';
 import { EmailSubscription } from 'aws-cdk-lib/aws-sns-subscriptions';
 import { createBedrockAgentCoreRole } from './roles/bedrock-agent-core-role';
+import * as path from 'path';
 
 const backend = defineBackend({
   auth,
@@ -38,6 +40,24 @@ const agentSessionBucket = new Bucket(agentSessionStack, 'AgentSessionBucket', {
 });
 
 console.log(`Agent sessions bucket will be created: ${agentSessionBucket.bucketName}`);
+
+/* ------------------------- DDL Files Upload ------------------------ */
+
+// Deploy DDL files to the NFL data bucket
+const ddlDeploymentStack = backend.createStack('DDLDeploymentStack');
+
+// Reference the existing NFL data bucket
+const nflDataBucket = Bucket.fromBucketName(ddlDeploymentStack, 'NFLDataBucket', 'alt-nfl-bucket');
+
+// Deploy DDL files from local genai/database directory to S3
+new BucketDeployment(ddlDeploymentStack, 'DDLFilesDeployment', {
+  sources: [Source.asset(path.join(__dirname, '..', 'genai', 'database'))],
+  destinationBucket: nflDataBucket,
+  destinationKeyPrefix: 'knowledge_base_sql_ddl/',
+  prune: true, // Remove files that don't exist in source
+});
+
+console.log('DDL files will be deployed to s3://alt-nfl-bucket/knowledge_base_sql_ddl/');
 
 /* ------------------------- SNS: signup notifications ------------------------ */
 
