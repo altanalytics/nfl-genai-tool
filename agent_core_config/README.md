@@ -45,7 +45,7 @@ The system provides three specialized Lambda-based MCP services:
 
 ### 3. NFL Knowledge Service (`nfl-knowledge-service`)
 **Purpose**: Search NFL knowledge base for rules and context
-- **Knowledge Base ID**: `ZJOYGGYSJM`
+- **Knowledge Base ID**: `DO11YJUJMC`
 - **Usage**: NFL rules, historical context, league information
 
 ## Architecture Benefits

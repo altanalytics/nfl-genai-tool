@@ -52,7 +52,7 @@ User Input → Bedrock AgentCore → MCP Gateway → Lambda Services → Data So
 ### **Data Sources**
 - **S3 Bucket** (`alt-nfl-bucket`): Game data, schedules, knowledge base files
 - **Athena Database** (`nfl_stats_database`): Queryable NFL statistics
-- **Knowledge Base** (`ZJOYGGYSJM`): NFL rules and historical context
+- **Knowledge Base** (`DO11YJUJMC`): NFL rules and historical context
 
 ## 🚀 Quick Start
 
@@ -154,7 +154,7 @@ Update the `AGENTCORE_RUNTIME_ARN` in Amplify with the ARN from Step 3.
 
 #### **`nfl-knowledge-service___nfl_knowledge_service`**
 - **Purpose**: Search NFL knowledge base for rules and context
-- **Knowledge Base**: `ZJOYGGYSJM` with NFL rules and historical facts
+- **Knowledge Base**: `DO11YJUJMC` with NFL rules and historical facts
 - **Use Cases**: Rule clarifications, historical context, league information
 
 ## 📊 Database Schema

@@ -263,7 +263,7 @@ def main():
             'handler': 'handler.lambda_handler',
             'description': 'NFL MCP service for knowledge base search',
             'environment': {
-                'KNOWLEDGE_BASE_ID': 'ZJOYGGYSJM'  # NFL Knowledge Base ID
+                'KNOWLEDGE_BASE_ID': 'DO11YJUJMC'  # NFL Knowledge Base ID
             }
         }
     ]

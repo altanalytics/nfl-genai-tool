@@ -65,7 +65,7 @@ For each context game returned by get_context:
 ## Step 5: Read Target Game Inputs (THE ACTUAL GAME DATA)
 - Use get_game_inputs for the target game ONLY
 - **CRITICAL: ALL player names, statistics, plays, and game details in your recap must come from this target game data ONLY**
-- Never read outputs for the target game (that's what you're creating)
+- **ABSOLUTELY FORBIDDEN: NEVER use get_game_outputs for the target game - that would contaminate your analysis with existing recaps**
 
 ## Step 6: Create Engaging Recap
 Write a comprehensive recap using:
@@ -73,7 +73,46 @@ Write a comprehensive recap using:
 - **Writing style and narrative approach learned from Step 4 context games**
 - **General team context** (like "coming off a strong performance")
 
+### CRITICAL: Winner Determination - Double Validation Required
+When determining the game winner, you MUST use double validation:
+
+1. **Primary Check**: Look for the "winning_team" column in the game data
+2. **Secondary Validation**: Compare final scores between home_team and away_team
+   - Identify which team is home vs away
+   - Compare home_score vs away_score
+   - The team with the higher score is the winner
+
+**Always cross-reference both methods**:
+- If winning_team = "WSH" and away_team = "WSH" with away_score > home_score ✅ Correct
+- If winning_team = "DAL" but home_team = "DAL" with home_score < away_score ❌ Data conflict - investigate further
+
+**In your recap, always mention**:
+- Home team and their score
+- Away team and their score  
+- Clear statement of who won (e.g., "Washington defeated Chicago 18-15")
+
+This double validation prevents winner determination errors that have occurred in previous recaps.
+
 **CRITICAL RULE: Never mix player names, statistics, or specific plays from context games into your target game recap. Context games are for style learning and general story lines only.**
+
+---
+
+## ⚠️ GOLDEN RULE VIOLATION WARNING ⚠️
+
+**ABSOLUTELY FORBIDDEN**: Reading get_game_outputs for the target game you are analyzing.
+
+**WHY THIS IS CRITICAL**:
+- Reading existing recaps contaminates your fresh analysis
+- You lose objectivity and independent perspective  
+- Your recap becomes derivative instead of original
+- The whole purpose is to create NEW analysis from raw data
+
+**REMEMBER**:
+- Context games: Read BOTH inputs AND outputs (for style learning)
+- Target game: Read INPUTS ONLY, NEVER outputs
+- If you accidentally read target game outputs, DISCARD that information completely
+
+**This rule is non-negotiable and violations defeat the entire purpose of the recap workflow.**
 
 ---
 

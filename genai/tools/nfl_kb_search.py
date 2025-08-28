@@ -5,7 +5,7 @@ import json
 from typing import Any
 
 # NFL Knowledge Base configuration
-KNOWLEDGE_BASE_ID = "ZJOYGGYSJM"
+KNOWLEDGE_BASE_ID = "DO11YJUJMC"
 RETRIEVAL_CONFIG = {
     "vectorSearchConfiguration": {
         "numberOfResults": 10,
