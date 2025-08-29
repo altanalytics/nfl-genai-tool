@@ -49,7 +49,7 @@ TBLPROPERTIES (
 
 --- can you give road wins for the Saints by season
 select season, count(*) as road_wins
-from nfl_stats_database.clean_schedule 
+select count(*) from nfl_stats_database.clean_schedule 
 where away_team = 'NO'
 and winning_team = 'NO'
 group by 1

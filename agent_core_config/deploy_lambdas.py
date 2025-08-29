@@ -265,6 +265,15 @@ def main():
             'environment': {
                 'KNOWLEDGE_BASE_ID': 'DO11YJUJMC'  # NFL Knowledge Base ID
             }
+        },
+        {
+            'name': 'nfl-query-learning-service',
+            'directory': os.path.join(current_dir, 'nfl-query-learning-service'),
+            'handler': 'handler.lambda_handler',
+            'description': 'NFL MCP service for writing query learnings to S3',
+            'environment': {
+                'NFL_BUCKET': nfl_bucket
+            }
         }
     ]
     

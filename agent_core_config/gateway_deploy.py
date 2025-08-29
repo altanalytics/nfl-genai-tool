@@ -16,7 +16,7 @@ def get_lambda_arns():
     lambda_client = boto3.client('lambda', region_name='us-east-1')
     
     arns = {}
-    functions = ['nfl-data-service', 'nfl-game-service', 'nfl-knowledge-service']
+    functions = ['nfl-data-service', 'nfl-game-service', 'nfl-knowledge-service', 'nfl-query-learning-service']
     
     for func_name in functions:
         try:
@@ -190,6 +190,41 @@ def main():
         }
     }
     
+    # Create NFL Query Learning Service target (Write learnings to S3)
+    learning_target_payload = {
+        "lambdaArn": lambda_arns['nfl-query-learning-service'],
+        "toolSchema": {
+            "inlinePayload": [
+                {
+                    "name": "nfl_query_learning_service",
+                    "description": "Write successful query patterns and learnings to S3 for knowledge base",
+                    "inputSchema": {
+                        "type": "object",
+                        "properties": {
+                            "operation": {
+                                "type": "string",
+                                "description": "The operation to perform (use 'write_learning')"
+                            },
+                            "category": {
+                                "type": "string",
+                                "description": "Category: player_queries, team_stats, casting_solutions, failed_queries, or general"
+                            },
+                            "filename": {
+                                "type": "string",
+                                "description": "Filename for the learning document (e.g., 'jayden_daniels_passing_pattern.md')"
+                            },
+                            "content": {
+                                "type": "string",
+                                "description": "Markdown content with query pattern, SQL, and learnings"
+                            }
+                        },
+                        "required": ["operation", "filename", "content"]
+                    }
+                }
+            ]
+        }
+    }
+    
     # Create all targets
     try:
         data_target = client.create_mcp_gateway_target(
@@ -218,6 +253,15 @@ def main():
             credentials=None,
         )
         print("✅ Created Lambda target: nfl-knowledge-service")
+        
+        learning_target = client.create_mcp_gateway_target(
+            gateway=gateway,
+            name='nfl-query-learning-service',
+            target_type="lambda",
+            target_payload=learning_target_payload,
+            credentials=None,
+        )
+        print("✅ Created Lambda target: nfl-query-learning-service")
         
     except Exception as e:
         print(f"⚠️  Error creating Lambda targets: {e}")
