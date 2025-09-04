@@ -57,4 +57,4 @@ export const PERSONALITY_OPTIONS: PersonalityOption[] = [
 ];
 
 export const DEFAULT_MODEL = 'us.amazon.nova-pro-v1:0';
-export const DEFAULT_PERSONALITY = 'nfl_analyst';
+export const DEFAULT_PERSONALITY = 'nfl_native_analyst';

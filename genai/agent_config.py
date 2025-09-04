@@ -17,7 +17,7 @@ import tools.get_game_inputs as get_game_inputs
 import tools.get_game_outputs as get_game_outputs
 import tools.nfl_kb_search as nfl_kb_search
 import tools.query_athena as query_athena
-import tools.nfl_game_service as nfl_game_service
+# import tools.nfl_game_service as nfl_game_service
 
 def load_prompt_from_file(filename: str) -> str:
     """
@@ -126,8 +126,8 @@ def create_strands_agent(model = 'us.amazon.nova-pro-v1:0',
     else:
         # Use local tools based on personality
         if personality == 'nfl_native_analyst':
-            print("Using native analyst tools: query_athena, nfl_game_service, nfl_kb_search")
-            tools_list = [query_athena, nfl_game_service, nfl_kb_search]
+            print("Using native analyst tools: query_athena, nfl_kb_search")
+            tools_list = [query_athena, nfl_kb_search]
         else:
             print("Using local NFL tools")
             tools_list = [get_schedules, get_context, get_game_inputs, get_game_outputs]

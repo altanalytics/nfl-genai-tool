@@ -5,12 +5,42 @@ Mimics the MCP service but calls Lambda directly
 
 import boto3
 import json
-from strands.tools import Tool
 
 # Initialize Lambda client
 lambda_client = boto3.client('lambda', region_name='us-east-1')
 
-def nfl_game_service(operation: str, game_id: str = None, include_inputs: bool = True, include_outputs: bool = True) -> str:
+TOOL_SPEC = {
+    "name": "nfl_game_service",
+    "description": "Retrieve complete game data and analysis including play-by-play, stats, and existing recaps.",
+    "inputSchema": {
+        "json": {
+            "type": "object",
+            "properties": {
+                "operation": {
+                    "type": "string",
+                    "description": "The operation to perform (should be 'get_game_details')"
+                },
+                "game_id": {
+                    "type": "string", 
+                    "description": "Game identifier (e.g., '2024_2_08_WSH_CHI')"
+                },
+                "include_inputs": {
+                    "type": "boolean",
+                    "description": "Whether to include game input data",
+                    "default": True
+                },
+                "include_outputs": {
+                    "type": "boolean", 
+                    "description": "Whether to include game output data",
+                    "default": True
+                }
+            },
+            "required": ["operation", "game_id"]
+        }
+    }
+}
+
+def nfl_game_service(operation: str, game_id: str, include_inputs: bool = True, include_outputs: bool = True) -> str:
     """
     Retrieve complete game data and analysis via direct Lambda invocation
     
@@ -54,10 +84,3 @@ def nfl_game_service(operation: str, game_id: str = None, include_inputs: bool =
     except Exception as e:
         print(f"❌ Error invoking nfl-game-service: {e}")
         return f"Error invoking NFL game service: {str(e)}"
-
-# Create the tool
-nfl_game_service_tool = Tool(
-    name="nfl_game_service",
-    description="Retrieve complete game data and analysis including play-by-play, stats, and existing recaps.",
-    func=nfl_game_service
-)
