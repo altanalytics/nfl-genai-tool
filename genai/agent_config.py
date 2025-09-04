@@ -17,6 +17,7 @@ import tools.get_game_inputs as get_game_inputs
 import tools.get_game_outputs as get_game_outputs
 import tools.nfl_kb_search as nfl_kb_search
 import tools.query_athena as query_athena
+import tools.nfl_game_service as nfl_game_service
 
 def load_prompt_from_file(filename: str) -> str:
     """
@@ -44,7 +45,7 @@ def get_system_prompt(personality: str, model: str = 'us.amazon.nova-micro-v1:0'
     Get the system prompt for a given personality, including rules.
     
     Args:
-        personality: Either 'nfl_with_kb', 'nfl_without_kb', or custom prompt
+        personality: Either 'nfl_game_recap', 'nfl_analyst', 'nfl_native_analyst', or custom prompt
         model: The model ID being used
         
     Returns:
@@ -54,9 +55,11 @@ def get_system_prompt(personality: str, model: str = 'us.amazon.nova-micro-v1:0'
     rules = load_prompt_from_file('rules')
     
     # Handle specific personalities
-    if personality in ['nfl_game_recap', 'nfl_analyst']:
+    if personality in ['nfl_game_recap', 'nfl_analyst', 'nfl_native_analyst']:
         if personality == 'nfl_analyst':
             base_prompt = load_prompt_from_file('nfl_analyst')
+        elif personality == 'nfl_native_analyst':
+            base_prompt = load_prompt_from_file('nfl_native_analyst')
         else:
             base_prompt = load_prompt_from_file('nfl_tools')
     else:
@@ -87,7 +90,7 @@ def create_strands_agent(model = 'us.amazon.nova-pro-v1:0',
     
     Args:
         model (str): The Bedrock model ID to use
-        personality (str): Either 'nfl_game_recap', 'nfl_analyst', or custom system prompt
+        personality (str): Either 'nfl_game_recap', 'nfl_analyst', 'nfl_native_analyst', or custom system prompt
         session_id (str): Session ID for S3 session management
         s3_bucket (str): S3 bucket for session storage
         s3_prefix (str): S3 prefix for session storage
@@ -121,13 +124,17 @@ def create_strands_agent(model = 'us.amazon.nova-pro-v1:0',
         print(f"Using provided MCP tools: {[getattr(tool, 'tool_name', str(tool)) for tool in tools]}")
         tools_list = tools
     else:
-        # Use local tools for other personalities
-        print("Using local NFL tools")
-        tools_list = [get_schedules, get_context, get_game_inputs, get_game_outputs]
-        
-        # Add knowledge base tool for nfl_game_recap personality
-        if personality == 'nfl_game_recap':
-            tools_list.append(nfl_kb_search)
+        # Use local tools based on personality
+        if personality == 'nfl_native_analyst':
+            print("Using native analyst tools: query_athena, nfl_game_service, nfl_kb_search")
+            tools_list = [query_athena, nfl_game_service, nfl_kb_search]
+        else:
+            print("Using local NFL tools")
+            tools_list = [get_schedules, get_context, get_game_inputs, get_game_outputs]
+            
+            # Add knowledge base tool for nfl_game_recap personality
+            if personality == 'nfl_game_recap':
+                tools_list.append(nfl_kb_search)
 
     # Create session manager based on whether S3 parameters are provided
     session_manager = None

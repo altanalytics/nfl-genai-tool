@@ -54,7 +54,7 @@ def get_game_outputs(tool, **kwargs: Any):
         season_type_map = {
             "1": "preseason",
             "2": "regular-season", 
-            "3": "postseason"
+            "3": "post-season"
         }
         
         season_type_folder = season_type_map.get(season_type_code)

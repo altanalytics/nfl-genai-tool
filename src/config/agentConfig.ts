@@ -40,8 +40,13 @@ export const MODEL_OPTIONS: ModelOption[] = [
 
 export const PERSONALITY_OPTIONS: PersonalityOption[] = [
   {
+    id: 'nfl_native_analyst',
+    name: 'NFL Analyst Local Tools',
+    description: 'Database-driven statistical analysis and insights using local toold for complex queries and trends'
+  },
+    {
     id: 'nfl_analyst',
-    name: 'NFL Analyst',
+    name: 'NFL Analyst MCP',
     description: 'Database-driven statistical analysis and insights using MCP microservices for complex queries and trends'
   },
   {
