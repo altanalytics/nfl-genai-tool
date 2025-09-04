@@ -3,24 +3,43 @@ import time
 import pandas as pd
 from typing import Dict, Any, List
 
+TOOL_SPEC = {
+    "name": "query_athena",
+    "description": "Execute SQL queries against the NFL statistics database using AWS Athena. Only SELECT queries are allowed.",
+    "inputSchema": {
+        "json": {
+            "type": "object",
+            "properties": {
+                "sql_query": {
+                    "type": "string",
+                    "description": "The SQL query to execute (SELECT statements only)"
+                },
+                "database": {
+                    "type": "string", 
+                    "description": "The Athena database name",
+                    "default": "nfl_stats_database"
+                }
+            },
+            "required": ["sql_query"]
+        }
+    }
+}
 
-def query_athena(tool_use_id: str, sql_query: str, database: str = "nfl_stats_database") -> Dict[str, Any]:
+def query_athena(sql_query: str, database: str = "nfl_stats_database") -> str:
     """
     Execute a SQL query against AWS Athena and return results.
     
     Args:
-        tool_use_id: Unique identifier for this tool use
         sql_query: The SQL query to execute
         database: The Athena database name (default: nfl_stats_database)
         
     Returns:
-        Dictionary with query results or error information
+        String with query results or error information
     """
     
     # Initialize AWS session with nfl profile
     session = boto3.Session(profile_name='nfl')
     athena_client = session.client('athena')
-    s3_client = session.client('s3')
     
     # Configuration
     s3_output_bucket = "alt-nfl-bucket"
@@ -30,30 +49,18 @@ def query_athena(tool_use_id: str, sql_query: str, database: str = "nfl_stats_da
         # Basic query validation
         sql_query = sql_query.strip()
         if not sql_query:
-            return {
-                "toolUseId": tool_use_id,
-                "status": "error",
-                "content": [{"text": "SQL query cannot be empty"}]
-            }
+            return "Error: SQL query cannot be empty"
         
         # Safety checks - only allow SELECT statements
         query_upper = sql_query.upper().strip()
         if not query_upper.startswith('SELECT'):
-            return {
-                "toolUseId": tool_use_id,
-                "status": "error",
-                "content": [{"text": "Only SELECT queries are allowed for security reasons"}]
-            }
+            return "Error: Only SELECT queries are allowed for security reasons"
         
         # Check for potentially dangerous keywords
         dangerous_keywords = ['DROP', 'DELETE', 'INSERT', 'UPDATE', 'CREATE', 'ALTER', 'TRUNCATE']
         for keyword in dangerous_keywords:
             if keyword in query_upper:
-                return {
-                    "toolUseId": tool_use_id,
-                    "status": "error",
-                    "content": [{"text": f"Query contains prohibited keyword: {keyword}"}]
-                }
+                return f"Error: Query contains forbidden keyword '{keyword}'. Only SELECT queries are allowed."
         
         # Start query execution
         response = athena_client.start_query_execution(
@@ -66,9 +73,8 @@ def query_athena(tool_use_id: str, sql_query: str, database: str = "nfl_stats_da
         
         query_execution_id = response['QueryExecutionId']
         
-        # Wait for query to complete
+        # Wait for query completion
         max_wait_time = 60  # seconds
-        wait_interval = 2   # seconds
         elapsed_time = 0
         
         while elapsed_time < max_wait_time:
@@ -79,40 +85,27 @@ def query_athena(tool_use_id: str, sql_query: str, database: str = "nfl_stats_da
                 break
             elif status in ['FAILED', 'CANCELLED']:
                 error_reason = response['QueryExecution']['Status'].get('StateChangeReason', 'Unknown error')
-                return {
-                    "toolUseId": tool_use_id,
-                    "status": "error",
-                    "content": [{"text": f"Query failed: {error_reason}"}]
-                }
+                return f"Error: Query failed - {error_reason}"
             
-            time.sleep(wait_interval)
-            elapsed_time += wait_interval
+            time.sleep(2)
+            elapsed_time += 2
         
         if elapsed_time >= max_wait_time:
-            return {
-                "toolUseId": tool_use_id,
-                "status": "error",
-                "content": [{"text": "Query timed out after 60 seconds"}]
-            }
+            return "Error: Query timed out after 60 seconds"
         
         # Get query results
-        results_response = athena_client.get_query_results(QueryExecutionId=query_execution_id)
+        results = athena_client.get_query_results(QueryExecutionId=query_execution_id)
         
-        # Parse results
-        result_set = results_response['ResultSet']
-        rows = result_set['Rows']
+        # Process results
+        rows = results['ResultSet']['Rows']
         
         if not rows:
-            return {
-                "toolUseId": tool_use_id,
-                "status": "success",
-                "content": [{"text": "Query executed successfully but returned no results."}]
-            }
+            return "Query executed successfully but returned no data rows."
         
         # Extract column names from first row
         columns = [col['VarCharValue'] for col in rows[0]['Data']]
         
-        # Extract data rows
+        # Extract data rows (skip header)
         data_rows = []
         for row in rows[1:]:  # Skip header row
             row_data = []
@@ -120,44 +113,28 @@ def query_athena(tool_use_id: str, sql_query: str, database: str = "nfl_stats_da
                 # Handle different data types
                 if 'VarCharValue' in cell:
                     row_data.append(cell['VarCharValue'])
+                elif 'BigIntValue' in cell:
+                    row_data.append(str(cell['BigIntValue']))
+                elif 'IntegerValue' in cell:
+                    row_data.append(str(cell['IntegerValue']))
+                elif 'DoubleValue' in cell:
+                    row_data.append(str(cell['DoubleValue']))
                 else:
-                    row_data.append('')  # Handle null values
+                    row_data.append('NULL')
             data_rows.append(row_data)
         
-        # Create DataFrame for better formatting
+        # Format results as a readable table
         if data_rows:
+            # Create DataFrame for better formatting
             df = pd.DataFrame(data_rows, columns=columns)
-            
-            # Limit results to prevent overwhelming output
-            max_rows = 100
-            if len(df) > max_rows:
-                result_text = f"Query returned {len(df)} rows. Showing first {max_rows} rows:\n\n"
-                df = df.head(max_rows)
-            else:
-                result_text = f"Query returned {len(df)} rows:\n\n"
-            
-            # Format as table
-            result_text += df.to_string(index=False)
-            
-            # Add query execution info
-            result_text += f"\n\nQuery executed successfully in {elapsed_time} seconds."
-            result_text += f"\nQuery ID: {query_execution_id}"
-            
+            result_text = f"Query Results ({len(data_rows)} rows):\n\n{df.to_string(index=False)}"
         else:
             result_text = "Query executed successfully but returned no data rows."
         
-        return {
-            "toolUseId": tool_use_id,
-            "status": "success",
-            "content": [{"text": result_text}]
-        }
+        return result_text
         
     except Exception as e:
-        return {
-            "toolUseId": tool_use_id,
-            "status": "error",
-            "content": [{"text": f"Error executing Athena query: {str(e)}"}]
-        }
+        return f"Error executing Athena query: {str(e)}"
 
 
 def main():
@@ -173,14 +150,9 @@ def main():
     print("=== TESTING ATHENA QUERY ===")
     print(f"Query: {test_query}")
     
-    result = query_athena("test", test_query)
-    
-    if result["status"] == "success":
-        print("SUCCESS:")
-        print(result["content"][0]["text"])
-    else:
-        print("ERROR:")
-        print(result["content"][0]["text"])
+    result = query_athena(test_query)
+    print("Result:")
+    print(result)
 
 
 if __name__ == "__main__":
